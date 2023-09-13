@@ -6,7 +6,7 @@ Identity Manager provides a rich set of [out-of-the-box integrations](https://ww
 
 To connect non-generic unsupported systems Identity Manager also provides you with the option of building your own custom connector using Windows PowerShell.
 
-[Creating a PowerShell Synchronization Project](https://support.oneidentity.com/de-de/technical-documents/identity-manager/9.1.1/windows-powershell-connector-user-guide/2#TOPIC-1994514) is a multi-step process.
+Creating a [PowerShell Synchronization Project](https://support.oneidentity.com/de-de/technical-documents/identity-manager/9.1.1/windows-powershell-connector-user-guide/2#TOPIC-1994514) is a multi-step process.
 
 The first and crucial step in that process is creating a Connector Definition File (**CDF**), written in XML, which describes the structure of the target system and the Windows PowerShell cmdlets to use.
 
