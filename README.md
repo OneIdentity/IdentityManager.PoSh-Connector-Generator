@@ -41,7 +41,7 @@ This solution accelerator works with all supported versions of Identity Manager.
 <!-- Requirements -->
 ## Requirements
 
-* [.NET Desktop Runtime 5.0.17]()
+* [.NET Desktop Runtime 7.0](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
 
 <!-- Limitations -->
 ## Limitations
