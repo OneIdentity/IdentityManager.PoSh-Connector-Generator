@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Authors>Paul Sherman</Authors>
+    <Company>One Identity LLC.</Company>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="CommonForms\MetadataImprtForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CommonForms\ParametersForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CommonForms\SyncClassForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+
+</Project>

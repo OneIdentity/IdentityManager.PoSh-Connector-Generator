@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Version>1.0.2</Version>
+    <Authors>Paul Sherman</Authors>
+    <Company>One Identity LLC.</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspose.Zip" Version="21.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OIM.PS.SyncProject.Common\OIM.PS.SyncProject.Common.csproj" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)OIM.PS.SyncProject.GeneratorUI\bin\Debug\net5.0-windows\$(TargetFileName)" />
+  </Target>
+
+</Project>
