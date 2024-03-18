@@ -13,8 +13,8 @@ namespace OIM.PS.SyncProject.Generator
         private string _className;        
         private static Random _ran = new Random();
         private PSSyncMetadata _meta = new PSSyncMetadata();
-
-        public PowerShellModuleGenerator(PSSyncMetadata metadata)
+		
+		public PowerShellModuleGenerator(PSSyncMetadata metadata)
         {
             this._nameSpace = metadata.Namespace;
             this._className = metadata.ClassName;
@@ -83,9 +83,9 @@ namespace OIM.PS.SyncProject.Generator
 
             sb.AppendLine("}");
             sb.AppendLine("");
-
-            //P.S. Classes ======================================================
-            foreach (var item in _meta.SyncClasses)
+						
+			//P.S. Classes ======================================================
+			foreach (var item in _meta.SyncClasses)
             {
                 sb.AppendLine($"#======== {item.ClassName.ToUpper()} ============================");
 
@@ -377,11 +377,11 @@ namespace OIM.PS.SyncProject.Generator
                     {
                         if (item.DataType == DataTypes.String)
                         {
-                            tmpSb.AppendLine($"    ${synClass.ClassName.ToLower()}.{item.PropertyName} = [System.guid]::NewGuid().toString()");
+							tmpSb.AppendLine($"    ${synClass.ClassName.ToLower()}.{item.PropertyName} = '" + Guid.NewGuid().ToString() + "'");
                         }
                         else if (item.DataType == DataTypes.Int)
                         {
-                            tmpSb.AppendLine($"    ${synClass.ClassName.ToLower()}.{item.PropertyName} = Get-Random");
+                            tmpSb.AppendLine($"    ${synClass.ClassName.ToLower()}.{item.PropertyName} = " + $"{i}{i}{i}{i}");
                         }
                     }
                     else
@@ -390,7 +390,18 @@ namespace OIM.PS.SyncProject.Generator
                         {
                             if (item.IsMultivalue)
                             {
-                                tmpSb.AppendLine($"    ${synClass.ClassName.ToLower()}.{item.PropertyName} = @('Test{item.PropertyName}{i.ToString()}','Test{item.PropertyName}{i.ToString()}{i.ToString()}')");
+								//P.S. If property ends with 's' - like Groups - remove 's'.
+								// Also number should be between 0 and 4 and two numbers should be different.
+								var propName = item.PropertyName.Trim();
+								if (propName.EndsWith('s'))
+								{
+									propName = propName.TrimEnd('s');
+								}
+
+								var num1 = GetRandomNumber(0, 5, null);
+								var num2 = GetRandomNumber(0, 5, num1.ToString());
+
+								tmpSb.AppendLine($"    ${synClass.ClassName.ToLower()}.{item.PropertyName} = @('Test{propName}{num1.ToString()}','Test{propName}{num2.ToString()}')");
                             }
                             else
                             {
@@ -428,6 +439,27 @@ namespace OIM.PS.SyncProject.Generator
             return sb.ToString();
         }
 
-        
-    }
+		private int GetRandomNumber(int from, int to, string startingValue)
+		{
+			int ret = 0;
+
+			Random rnd = new Random();
+			while (true) {
+				
+                if (string.IsNullOrEmpty(startingValue))
+                {
+                    return rnd.Next(from, to);
+				}
+				else
+				{
+					ret = rnd.Next(from, to);
+
+					if (ret.ToString() != startingValue)
+					{
+						return ret;
+					}
+				}                
+			}
+		}
+	}
 }
