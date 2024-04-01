@@ -12,8 +12,8 @@ namespace OIM.PS.SyncProject.Common
     {
         private DataTypes _DataType = DataTypes.String;
         private bool _IsPrimaryKey;
-
-        public string PropertyName { get; set; }
+		
+		public string PropertyName { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         public DataTypes DataType
@@ -69,5 +69,7 @@ namespace OIM.PS.SyncProject.Common
         public bool IsRevision { get; set; }
         public bool IsMultivalue { get; set; }
         public int OrderNumber { get; set; }
-    }
+		public bool IsCombinedPrimaryKey { get; set; }
+		public bool IncludeInCombinedPrimaryKey { get; set; }
+	}
 }

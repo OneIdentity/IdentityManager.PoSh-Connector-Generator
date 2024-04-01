@@ -195,6 +195,7 @@ namespace OIM.PS.SyncProject.GeneratorUI
 						{
 							if (rowData.ClassName == syncClass.ClassName)
 							{
+								rowData.IsManyToMany = syncClass.IsManyToMany;
 								rowData = syncClass;
 								break;
 							}
@@ -313,7 +314,7 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			//--------------------------------------------------------------------------------
 			var cg = Activator.CreateInstance(typePowerShellModule, new object[] { _meta });
 			method = typePowerShellModule.GetMethod("GenerateModule");
-			string strModule = method.Invoke(cg, null).ToString();
+			string strModule = method.Invoke(cg, new object[] { path }).ToString();
 			WriteStringToFile(psModuleFile, strModule);
 			//--------------------------------------------------------------------------------
 

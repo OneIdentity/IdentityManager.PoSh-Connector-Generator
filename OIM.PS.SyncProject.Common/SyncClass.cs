@@ -16,8 +16,9 @@ namespace OIM.PS.SyncProject.Common
         }
         
         public string ClassName { get; set; }
+		public bool IsManyToMany { get; set; }
 
-        private List<GenClassProp> _properties;
+		private List<GenClassProp> _properties;
         public List<GenClassProp> Properties
         {
             get 

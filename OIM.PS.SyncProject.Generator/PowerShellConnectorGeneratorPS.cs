@@ -27,7 +27,7 @@ namespace OIM.PS.SyncProject.Generator
             PowershellConnectorDefinition def = new PowershellConnectorDefinition();
             def.Id = "SampleGeneratedConnector";
             def.Description = "Powershell Generated Connector using PowerShell Module";
-            def.Version = "1.0";
+            def.Version = "1.2";
 
             def.PluginAssemblies = new List<PCDefPluginAssembly>()
             {
@@ -36,8 +36,10 @@ namespace OIM.PS.SyncProject.Generator
 
             def.ConnectionParameters = new List<PCDefConnectionParameter>();
             def.ConnectionParameters.Add(new PCDefConnectionParameter() { Name = "PathToPowerShellModule", Description = "Path to PowerShell module" });
-            
-            foreach (var item in _meta.Parameters)
+			def.ConnectionParameters.Add(new PCDefConnectionParameter() { Name = "logToFile", Description = "If value is 'Y' or '1' or 'True' - will write debug messages to the log file" });
+			def.ConnectionParameters.Add(new PCDefConnectionParameter() { Name = "logFolder", Description = "Path to a folder where log files will be created" });
+
+			foreach (var item in _meta.Parameters)
             {
                 def.ConnectionParameters.Add(new PCDefConnectionParameter()
                 {
@@ -226,7 +228,7 @@ namespace OIM.PS.SyncProject.Generator
             };
 
             //P.S. Primary key is always unique
-            if (item.IsPrimaryKey)
+            if (item.IsPrimaryKey || item.IsCombinedPrimaryKey)
             {
                 prop.IsUniqueKey = true;
                 prop.IsUniqueKeySpecified = true;
@@ -292,7 +294,7 @@ namespace OIM.PS.SyncProject.Generator
             }
 
             //P.S. "id" is mapped to Delete command. Nothing else
-            if (item.IsPrimaryKey == true)
+            if (item.IsPrimaryKey == true || item.IsCombinedPrimaryKey == true)
             {
                 map.Add(new PCDefClassPropertyCommandMappingsMap()
                 {
@@ -326,7 +328,7 @@ namespace OIM.PS.SyncProject.Generator
         {
             //P.S. Only command XxxUpdate updates values.
             //But Auto Filled and PrimaryKey values don't get updated.            
-            if (!(item.IsAutoFill || item.IsPrimaryKey))
+            if (!(item.IsAutoFill || item.IsPrimaryKey || item.IsCombinedPrimaryKey))
             {
                 prop.Items.Add(new PCDefClassPropertyModifiedBy()
                 {
@@ -541,7 +543,7 @@ namespace OIM.PS.SyncProject.Generator
             sb.AppendLine("           param( ");
             
             SyncClass cls = _meta.GetClassByName(className);
-            List<GenClassProp> props = cls.Properties.Where(q => q.IsPrimaryKey).ToList();
+            List<GenClassProp> props = cls.Properties.Where(q => q.IsPrimaryKey || q.IsCombinedPrimaryKey).ToList();
             if (props == null || props.Count == 0)
             {
                 throw new Exception($"There must be one parameter, marked as 'Primary Key' in class {className}");
@@ -552,7 +554,7 @@ namespace OIM.PS.SyncProject.Generator
             {
                 sb.AppendLine("              [parameter(Mandatory =$true, ValueFromPipelineByPropertyName =$true)] ");
 
-                if (prop.IsMandatory || prop.IsPrimaryKey)
+                if (prop.IsMandatory || prop.IsPrimaryKey || prop.IsCombinedPrimaryKey)
                 {
                     sb.AppendLine("              [ValidateNotNullOrEmpty()] ");
                 }
@@ -646,19 +648,19 @@ namespace OIM.PS.SyncProject.Generator
                 //P.S. We do need to pass Primary Key to the command.
                 //But we don't need to pass AutoFill fields
                 //because we don't update them.
-                if (field.IsAutoFill && !field.IsPrimaryKey)
+                if (field.IsAutoFill && !(field.IsPrimaryKey || field.IsCombinedPrimaryKey))
                 {
                     continue;
                 }
 
-                if(field.IsPrimaryKey)
+                if(field.IsPrimaryKey || field.IsCombinedPrimaryKey)
                 {
                     sbDll.Append($"${field.PropertyName},");
                 }
 
                 sb.AppendLine("           [parameter(Mandatory =$false, ValueFromPipelineByPropertyName =$true)] ");
 
-                if (field.IsMandatory || field.IsPrimaryKey)
+                if (field.IsMandatory || field.IsPrimaryKey || field.IsCombinedPrimaryKey)
                 {
                     sb.AppendLine("           [ValidateNotNullOrEmpty()] ");
                 }                
@@ -701,7 +703,7 @@ namespace OIM.PS.SyncProject.Generator
             sb.AppendLine("           param( ");
             
             SyncClass cls = _meta.GetClassByName(className);
-            List<GenClassProp> props = cls.Properties.Where(q => q.IsPrimaryKey).ToList();
+            List<GenClassProp> props = cls.Properties.Where(q => q.IsPrimaryKey || q.IsCombinedPrimaryKey).ToList();
             if (props == null || props.Count == 0)
             {
                 throw new Exception($"There must be one parameter, marked as 'Primary Key' in class {className}");
@@ -711,7 +713,7 @@ namespace OIM.PS.SyncProject.Generator
             {
                 sb.AppendLine("              [parameter(Mandatory =$true, ValueFromPipelineByPropertyName =$true)] ");
 
-                if (prop.IsMandatory || prop.IsPrimaryKey)
+                if (prop.IsMandatory || prop.IsPrimaryKey || prop.IsCombinedPrimaryKey)
                 {
                     sb.AppendLine("              [ValidateNotNullOrEmpty()] ");
                 }
@@ -749,14 +751,14 @@ namespace OIM.PS.SyncProject.Generator
             foreach (var field in fields)
             {                
                 //P.S. We don't need to pass Auto Generated ke if it is not a Primary Key to 'Create' function
-                if (field.IsAutoFill && !field.IsPrimaryKey)
+                if (field.IsAutoFill && !(field.IsPrimaryKey || field.IsCombinedPrimaryKey))
                 {
                     continue;                    
                 }
 
                 sb.AppendLine("           [parameter(Mandatory =$false, ValueFromPipelineByPropertyName =$true)] ");
 
-                if (field.IsMandatory || field.IsPrimaryKey)
+                if (field.IsMandatory || field.IsPrimaryKey || field.IsCombinedPrimaryKey)
                 {
                     sb.AppendLine("           [ValidateNotNullOrEmpty()] ");
                 }
@@ -789,7 +791,7 @@ namespace OIM.PS.SyncProject.Generator
             foreach (var field in fields)
             {
                 //P.S. We don't need to pass Auto Generated key if it is not a Primary Key to 'Create' function
-                if (field.IsAutoFill && !field.IsPrimaryKey)
+                if (field.IsAutoFill && !(field.IsPrimaryKey || field.IsCombinedPrimaryKey) )
                 {
                     continue;                    
                 }
