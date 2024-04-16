@@ -410,10 +410,12 @@ namespace OIM.PS.SyncProject.Generator
 			sb.AppendLine("");
 			sb.AppendLine("    #===== This method's implementation is for demonstration purposes only. ======================");
 			sb.AppendLine("");
-			sb.AppendLine($"    ${synClass.ClassName.ToLower()}s = $null;");
+			sb.AppendLine($"    ${synClass.ClassName.ToLower()}s = New-Object Collections.Generic.List[{synClass.ClassName}]");
 			sb.AppendLine("    try { ");
 			sb.AppendLine($"      $jsonContent = Get-Content -Raw -Path $script:{synClass.ClassName.ToLower()}FilePath");
-			sb.AppendLine($"      ${synClass.ClassName.ToLower()}s = $jsonContent | ConvertFrom-Json");
+			sb.AppendLine($"      ${synClass.ClassName.ToLower()}sFromJson = $jsonContent | ConvertFrom-Json");
+			sb.AppendLine("");
+			sb.AppendLine($"      ${synClass.ClassName.ToLower()}s = [Collections.Generic.List[{synClass.ClassName}]] ${synClass.ClassName.ToLower()}sFromJson ");
 			sb.AppendLine("    }");
 			sb.AppendLine("    catch");
 			sb.AppendLine("    {");
