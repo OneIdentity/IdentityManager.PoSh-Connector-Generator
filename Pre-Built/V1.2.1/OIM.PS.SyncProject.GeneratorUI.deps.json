@@ -11,7 +11,7 @@
           "Aspose.Zip": "21.6.0",
           "Newtonsoft.Json": "13.0.1",
           "OIM.PS.SyncProject.Common": "1.0.0",
-          "OIM.PS.SyncProject.Generator": "1.0.2"
+          "OIM.PS.SyncProject.Generator": "1.2.0"
         },
         "runtime": {
           "OIM.PS.SyncProject.GeneratorUI.dll": {}
@@ -64,7 +64,7 @@
           "OIM.PS.SyncProject.Common.dll": {}
         }
       },
-      "OIM.PS.SyncProject.Generator/1.0.2": {
+      "OIM.PS.SyncProject.Generator/1.2.0": {
         "dependencies": {
           "Aspose.Zip": "21.6.0",
           "OIM.PS.SyncProject.Common": "1.0.0"
@@ -135,7 +135,7 @@
       "serviceable": false,
       "sha512": ""
     },
-    "OIM.PS.SyncProject.Generator/1.0.2": {
+    "OIM.PS.SyncProject.Generator/1.2.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
