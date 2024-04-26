@@ -1,4 +1,5 @@
-﻿using Aspose.Zip;
+﻿//using Aspose.Zip;
+using Ionic.Zip;
 using OIM.PS.SyncProject.Common;
 using System;
 using System.Collections.Generic;
@@ -25,20 +26,29 @@ namespace OIM.PS.SyncProject.Generator
         }
 
         public void BuildProject()
-        {            
-            using (FileStream zipFile = File.Open(myZip, FileMode.Open))
-            {
-                // Decrypt using password
-                using (var archive = new Archive(zipFile, new ArchiveLoadOptions() { DecryptionPassword = "#$nosecrets!!" }))
-                {
-                    // Extract files to folder
-                    archive.ExtractToDirectory(_outputPath);
-                }
-            }
+        {
+			//using (FileStream zipFile = File.Open(myZip, FileMode.Open))
+			//{
+			//    // Decrypt using password
+			//    using (var archive = new Archive(zipFile, new ArchiveLoadOptions() { DecryptionPassword = "#$nosecrets!!" }))
+			//    {
+			//        // Extract files to folder
+			//        archive.ExtractToDirectory(_outputPath);
+			//    }
+			//}
+
+			using (ZipFile zip = ZipFile.Read(myZip))
+			{
+				foreach (ZipEntry e in zip)
+				{
+					e.ExtractWithPassword(_outputPath, "#$nosecrets!!");
+				}
+			}
 
 
-            //Main project file.
-            string projText = File.ReadAllText($"{_outputPath}\\{projectName}\\{projectName}\\{projectName}.csproj");
+
+			//Main project file.
+			string projText = File.ReadAllText($"{_outputPath}\\{projectName}\\{projectName}\\{projectName}.csproj");
             projText = projText.Replace("<NamespacePlaceholder>", _nameSpace);
             projText = projText.Replace("<AssembluPlaceholder>", _nameSpace);
             projText = projText.Replace("<MainClass>", _nameSpace);
