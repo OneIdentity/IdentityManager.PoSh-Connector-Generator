@@ -6,6 +6,8 @@
     <Version>1.2.0</Version>
     <Authors>Paul Sherman</Authors>
     <Company>One Identity LLC.</Company>
+    <AssemblyVersion>1.2.2.0</AssemblyVersion>
+    <FileVersion>1.2.2.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
