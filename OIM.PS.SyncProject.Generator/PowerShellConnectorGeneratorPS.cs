@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace OIM.PS.SyncProject.Generator
 {
@@ -41,14 +42,16 @@ namespace OIM.PS.SyncProject.Generator
 
 			foreach (var item in _meta.Parameters)
             {
-                def.ConnectionParameters.Add(new PCDefConnectionParameter()
-                {
-                    Name = item.ParamName,
-                    Description = item.Description,
-                    IsSensibleData = item.IsSensibleData,
-                    IsSensibleDataSpecified = true
-                });
-            }
+				var parDef = new PCDefConnectionParameter();
+				parDef.Name = item.ParamName;
+				parDef.Description = item.Description;
+				parDef.IsSensibleData = item.IsSensibleData;
+				parDef.IsSensibleDataSpecified = true;
+
+
+				def.ConnectionParameters.Add(parDef);
+
+			}
 
 
             def.Initialization = new PCDefInitialization();

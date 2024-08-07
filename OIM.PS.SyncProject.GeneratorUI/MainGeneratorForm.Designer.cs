@@ -34,8 +34,6 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			textBoxOutputFile = new System.Windows.Forms.TextBox();
 			label1 = new System.Windows.Forms.Label();
 			dataGridView1 = new System.Windows.Forms.DataGridView();
-			ParamName = new System.Windows.Forms.DataGridViewTextBoxColumn();
-			Description = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			butnAddParameter = new System.Windows.Forms.Button();
 			butnDelete = new System.Windows.Forms.Button();
 			dataGridViewClasses = new System.Windows.Forms.DataGridView();
@@ -57,13 +55,16 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			chkVisualStudio = new System.Windows.Forms.CheckBox();
 			btnGeneratePSDefinition = new System.Windows.Forms.Button();
 			tabGenerate = new System.Windows.Forms.TabControl();
-			tabPage1 = new System.Windows.Forms.TabPage();
 			tabPage2 = new System.Windows.Forms.TabPage();
+			tabPage1 = new System.Windows.Forms.TabPage();
+			ParamName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			Description = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			IsSensibleData = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
 			((System.ComponentModel.ISupportInitialize)dataGridViewClasses).BeginInit();
 			tabGenerate.SuspendLayout();
-			tabPage1.SuspendLayout();
 			tabPage2.SuspendLayout();
+			tabPage1.SuspendLayout();
 			SuspendLayout();
 			// 
 			// btnGenerate
@@ -103,7 +104,7 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			dataGridView1.AllowUserToDeleteRows = false;
 			dataGridView1.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
 			dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-			dataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { ParamName, Description });
+			dataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { ParamName, Description, IsSensibleData });
 			dataGridView1.Location = new System.Drawing.Point(30, 208);
 			dataGridView1.Name = "dataGridView1";
 			dataGridView1.ReadOnly = true;
@@ -111,26 +112,6 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			dataGridView1.RowTemplate.Height = 25;
 			dataGridView1.Size = new System.Drawing.Size(539, 129);
 			dataGridView1.TabIndex = 4;
-			// 
-			// ParamName
-			// 
-			ParamName.DataPropertyName = "ParamName";
-			ParamName.FillWeight = 150F;
-			ParamName.HeaderText = "Name";
-			ParamName.MinimumWidth = 6;
-			ParamName.Name = "ParamName";
-			ParamName.ReadOnly = true;
-			ParamName.Width = 150;
-			// 
-			// Description
-			// 
-			Description.DataPropertyName = "Description";
-			Description.FillWeight = 250F;
-			Description.HeaderText = "Description";
-			Description.MinimumWidth = 6;
-			Description.Name = "Description";
-			Description.ReadOnly = true;
-			Description.Width = 250;
 			// 
 			// butnAddParameter
 			// 
@@ -349,28 +330,57 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			tabGenerate.Size = new System.Drawing.Size(210, 165);
 			tabGenerate.TabIndex = 22;
 			// 
+			// tabPage2
+			// 
+			tabPage2.Controls.Add(btnGeneratePSDefinition);
+			tabPage2.Location = new System.Drawing.Point(4, 29);
+			tabPage2.Name = "tabPage2";
+			tabPage2.Padding = new System.Windows.Forms.Padding(3);
+			tabPage2.Size = new System.Drawing.Size(202, 132);
+			tabPage2.TabIndex = 1;
+			tabPage2.Text = "PowerShell";
+			tabPage2.UseVisualStyleBackColor = true;
+			// 
 			// tabPage1
 			// 
 			tabPage1.Controls.Add(chkVisualStudio);
 			tabPage1.Controls.Add(btnGenerateDefinition);
 			tabPage1.Location = new System.Drawing.Point(4, 29);
 			tabPage1.Name = "tabPage1";
-			tabPage1.Padding = new System.Windows.Forms.Padding(3, 3, 3, 3);
+			tabPage1.Padding = new System.Windows.Forms.Padding(3);
 			tabPage1.Size = new System.Drawing.Size(202, 132);
 			tabPage1.TabIndex = 0;
 			tabPage1.Text = ".NET";
 			tabPage1.UseVisualStyleBackColor = true;
 			// 
-			// tabPage2
+			// ParamName
 			// 
-			tabPage2.Controls.Add(btnGeneratePSDefinition);
-			tabPage2.Location = new System.Drawing.Point(4, 29);
-			tabPage2.Name = "tabPage2";
-			tabPage2.Padding = new System.Windows.Forms.Padding(3, 3, 3, 3);
-			tabPage2.Size = new System.Drawing.Size(202, 132);
-			tabPage2.TabIndex = 1;
-			tabPage2.Text = "PowerShell";
-			tabPage2.UseVisualStyleBackColor = true;
+			ParamName.DataPropertyName = "ParamName";
+			ParamName.FillWeight = 150F;
+			ParamName.HeaderText = "Name";
+			ParamName.MinimumWidth = 6;
+			ParamName.Name = "ParamName";
+			ParamName.ReadOnly = true;
+			ParamName.Width = 150;
+			// 
+			// Description
+			// 
+			Description.DataPropertyName = "Description";
+			Description.FillWeight = 250F;
+			Description.HeaderText = "Description";
+			Description.MinimumWidth = 6;
+			Description.Name = "Description";
+			Description.ReadOnly = true;
+			Description.Width = 250;
+			// 
+			// IsSensibleData
+			// 
+			IsSensibleData.DataPropertyName = "IsSensibleData";
+			IsSensibleData.HeaderText = "Secret";
+			IsSensibleData.MinimumWidth = 6;
+			IsSensibleData.Name = "IsSensibleData";
+			IsSensibleData.ReadOnly = true;
+			IsSensibleData.Width = 125;
 			// 
 			// MainGeneratorForm
 			// 
@@ -405,8 +415,8 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
 			((System.ComponentModel.ISupportInitialize)dataGridViewClasses).EndInit();
 			tabGenerate.ResumeLayout(false);
-			tabPage1.ResumeLayout(false);
 			tabPage2.ResumeLayout(false);
+			tabPage1.ResumeLayout(false);
 			ResumeLayout(false);
 			PerformLayout();
 		}
@@ -424,8 +434,6 @@ namespace OIM.PS.SyncProject.GeneratorUI
 		private System.Windows.Forms.Button btnDeleteClass;
 		private System.Windows.Forms.Button btnAddClass;
 		private System.Windows.Forms.Button btnFile;
-		private System.Windows.Forms.DataGridViewTextBoxColumn ParamName;
-		private System.Windows.Forms.DataGridViewTextBoxColumn Description;
 		private System.Windows.Forms.TextBox txtNamespace;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Label label4;
@@ -442,6 +450,9 @@ namespace OIM.PS.SyncProject.GeneratorUI
 		private System.Windows.Forms.TabControl tabGenerate;
 		private System.Windows.Forms.TabPage tabPage1;
 		private System.Windows.Forms.TabPage tabPage2;
+		private System.Windows.Forms.DataGridViewTextBoxColumn ParamName;
+		private System.Windows.Forms.DataGridViewTextBoxColumn Description;
+		private System.Windows.Forms.DataGridViewTextBoxColumn IsSensibleData;
 	}
 }
 
