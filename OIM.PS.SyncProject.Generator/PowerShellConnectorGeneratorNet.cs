@@ -574,7 +574,7 @@ namespace OIM.PS.SyncProject.Generator
             sb.AppendLine("        foreach ($dll in $arDLLs)");
             sb.AppendLine("        {");
             sb.AppendLine("            $fullName = Join-Path -Path $path -ChildPath $dll.Trim()");
-            sb.AppendLine("            [Reflection.Assembly]::LoadFile($fullName)      ");
+            sb.AppendLine("            Add-Type -Path $fullName      ");
             sb.AppendLine("        }");
 
 
