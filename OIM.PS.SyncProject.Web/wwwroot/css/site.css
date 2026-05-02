@@ -1,0 +1,146 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* One Identity Design Tokens */
+:root {
+  --oi-primary: #0a96d1;
+  --oi-primary-light: #8acbe3;
+  --oi-primary-dark: #004c6c;
+  --oi-on-primary: #ffffff;
+  --oi-secondary: #274a61;
+  --oi-text: #444647;
+  --oi-text-dark: #2f3233;
+  --oi-text-secondary: #424849;
+  --oi-bg: #f9fbfc;
+  --oi-surface: #ffffff;
+  --oi-border: #72787a;
+  --oi-border-light: #c2c7c9;
+  --oi-error: #db2534;
+  --oi-dark: #223338;
+  --oi-font: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+body {
+  font-family: var(--oi-font);
+  color: var(--oi-text);
+  background-color: var(--oi-bg);
+  margin-bottom: 60px;
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem var(--oi-primary);
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+/* One Identity Button Styles */
+.btn-oi-primary {
+  background-color: var(--oi-primary);
+  color: var(--oi-on-primary);
+  border: none;
+  font-weight: 600;
+}
+.btn-oi-primary:hover {
+  background-color: var(--oi-primary-dark);
+  color: var(--oi-on-primary);
+}
+
+.btn-oi-outline {
+  background-color: transparent;
+  color: var(--oi-primary);
+  border: 1px solid var(--oi-border);
+  font-weight: 600;
+}
+.btn-oi-outline:hover {
+  background-color: rgba(10, 150, 209, 0.08);
+  color: var(--oi-primary);
+  border-color: var(--oi-primary);
+}
+
+.btn-oi-tonal {
+  background-color: var(--oi-primary-light);
+  color: var(--oi-secondary);
+  border: none;
+  font-weight: 600;
+}
+.btn-oi-tonal:hover {
+  background-color: #6fbdd8;
+  color: var(--oi-secondary);
+}
+
+.btn-oi-danger {
+  background-color: transparent;
+  color: var(--oi-error);
+  border: 1px solid var(--oi-error);
+  font-weight: 600;
+}
+.btn-oi-danger:hover {
+  background-color: var(--oi-error);
+  color: var(--oi-on-primary);
+}
+
+.btn-oi-success {
+  background-color: #2e7d32;
+  color: var(--oi-on-primary);
+  border: none;
+  font-weight: 600;
+}
+.btn-oi-success:hover {
+  background-color: #1b5e20;
+  color: var(--oi-on-primary);
+}
+
+/* Card styling */
+.card {
+  border: 1px solid var(--oi-border-light);
+  border-radius: 4px;
+}
+.card-header {
+  background-color: var(--oi-surface);
+  border-bottom: 1px solid var(--oi-border-light);
+  color: var(--oi-text-dark);
+}
+
+/* Table styling */
+.table-light {
+  --bs-table-bg: var(--oi-bg);
+}
+
+/* Navbar override */
+.navbar-oi {
+  background-color: var(--oi-dark);
+  font-family: var(--oi-font);
+}
+.navbar-oi .navbar-brand {
+  color: var(--oi-on-primary);
+  font-weight: 700;
+}
+.navbar-oi .navbar-brand:hover {
+  color: var(--oi-primary-light);
+}
+.navbar-oi .nav-link {
+  color: rgba(255,255,255,0.85);
+}
+.navbar-oi .nav-link:hover,
+.navbar-oi .nav-link:focus {
+  color: var(--oi-on-primary);
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}

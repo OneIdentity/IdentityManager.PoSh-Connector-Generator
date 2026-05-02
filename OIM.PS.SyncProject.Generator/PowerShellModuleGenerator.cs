@@ -1,6 +1,4 @@
 ﻿using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.ApplicationServices;
-using Microsoft.VisualBasic.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -16,12 +14,9 @@ using System.Reflection.Emit;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
 using static System.Net.WebRequestMethods;
-using static System.Resources.ResXFileRef;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-using static System.Windows.Forms.AxHost;
 
 namespace OIM.PS.SyncProject.Generator
 {

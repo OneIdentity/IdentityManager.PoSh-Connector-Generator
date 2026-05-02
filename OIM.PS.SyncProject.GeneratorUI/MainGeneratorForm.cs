@@ -239,6 +239,12 @@ namespace OIM.PS.SyncProject.GeneratorUI
 				return;
 			}
 
+			if (string.IsNullOrWhiteSpace(txtNamespace.Text))
+			{
+				MessageBox.Show("Namespace is required");
+				return;
+			}
+
 
 			_meta.Parameters.Clear();
 			_meta.SyncClasses.Clear();
@@ -281,6 +287,13 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			if (string.IsNullOrEmpty(textBoxOutputFile.Text))
 			{
 				MessageBox.Show("Please select output folder");
+				return;
+			}
+
+			if (string.IsNullOrWhiteSpace(txtNamespace.Text))
+			{
+				MessageBox.Show("Namespace is required");
+				return;
 			}
 
 			_meta.Parameters.Clear();
@@ -340,6 +353,13 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			if (string.IsNullOrEmpty(textBoxOutputFile.Text))
 			{
 				MessageBox.Show("Please select output folder");
+				return;
+			}
+
+			if (string.IsNullOrWhiteSpace(txtNamespace.Text))
+			{
+				MessageBox.Show("Namespace is required");
+				return;
 			}
 
 			_meta.Parameters.Clear();

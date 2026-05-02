@@ -162,7 +162,7 @@ namespace OIM.PS.SyncProject.Common.CommonForms
 			// label1
 			// 
 			label1.AutoSize = true;
-			label1.Font = new System.Drawing.Font("Segoe UI", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			label1.Font = new System.Drawing.Font("Segoe UI", 16F);
 			label1.Location = new System.Drawing.Point(184, 11);
 			label1.Name = "label1";
 			label1.Size = new System.Drawing.Size(174, 37);
@@ -206,7 +206,7 @@ namespace OIM.PS.SyncProject.Common.CommonForms
 			lblManyToMany.AutoSize = true;
 			lblManyToMany.BackColor = System.Drawing.Color.DeepSkyBlue;
 			lblManyToMany.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			lblManyToMany.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+			lblManyToMany.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
 			lblManyToMany.ForeColor = System.Drawing.Color.Red;
 			lblManyToMany.Location = new System.Drawing.Point(356, 23);
 			lblManyToMany.Name = "lblManyToMany";

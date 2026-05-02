@@ -1,0 +1,516 @@
+@model OIM.PS.SyncProject.Web.Models.GeneratorViewModel
+@using OIM.PS.SyncProject.Common
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Sync Project Generator";
+    bool hasClasses = Model.SyncClasses.Count > 0;
+}
+
+<style>
+    html, body { height: 100%; overflow: hidden; }
+    .generator-layout {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 120px);
+    }
+    .grid-scroll {
+        overflow-y: auto;
+        max-height: 100%;
+        flex: 1 1 auto;
+    }
+    .section-fixed { flex: 0 0 auto; }
+    .btn-move { padding: 0 4px; font-size: 0.75rem; line-height: 1.2; color: var(--oi-primary); border-color: var(--oi-primary); }
+    .btn-move:hover { background-color: var(--oi-primary); color: #fff; }
+    .btn-del { border-color: var(--oi-primary); color: var(--oi-primary); }
+    .btn-del:hover { background-color: var(--oi-primary); color: #fff; }
+    .btn-edit-oi { border-color: var(--oi-primary); color: var(--oi-primary); }
+    .btn-edit-oi:hover { background-color: var(--oi-primary); color: #fff; }
+    /* 6. Alternating rows white and light blue */
+    .table-oi-striped tbody tr:nth-child(odd) { background-color: #fff; }
+    .table-oi-striped tbody tr:nth-child(even) { background-color: var(--oi-primary-light); }
+    .table-oi-striped thead { background-color: var(--oi-bg); }
+    /* Actions column right-align */
+    .td-actions { text-align: right; white-space: nowrap; }
+</style>
+
+<div class="generator-layout mt-2">
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show section-fixed" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Project Settings -->
+    <div class="card mb-2 section-fixed">
+        <div class="card-header py-1"><strong>Project Settings</strong></div>
+        <div class="card-body py-2">
+            <form method="post" asp-action="UpdateBasic" class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label mb-0 small">Namespace</label>
+                    <input type="text" name="namespace" class="form-control form-control-sm" value="@Model.Namespace" />
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label mb-0 small">Class Name</label>
+                    <input type="text" name="className" class="form-control form-control-sm" value="@Model.ClassName" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-sm btn-oi-outline w-100">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Two-column scrollable grids -->
+    <div class="row flex-grow-1" style="min-height:0;">
+        <!-- Parameters -->
+        <div class="col-md-5 d-flex flex-column" style="min-height:0;">
+            <div class="card flex-grow-1 d-flex flex-column" style="min-height:0;">
+                <div class="card-header py-1 d-flex justify-content-between align-items-center">
+                    <strong>Parameters</strong>
+                    <button type="button" class="btn btn-sm btn-oi-primary" data-bs-toggle="modal" data-bs-target="#addParamModal">+ Add</button>
+                </div>
+                <div class="card-body p-0 grid-scroll">
+                    <table class="table table-sm table-bordered table-oi-striped mb-0">
+                        <thead class="sticky-top">
+                            <tr><th>Name</th><th>Description</th><th>Type</th><th>Sensitive</th><th style="width:90px"></th></tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Parameters.Count; i++)
+                            {
+                                var p = Model.Parameters[i];
+                                <tr>
+                                    <td>@p.ParamName</td>
+                                    <td>@p.Description</td>
+                                    <td>@p.DataType</td>
+                                    <td>@(p.IsSensibleData ? "Yes" : "No")</td>
+                                    <td class="td-actions">
+                                        @if (i > 0)
+                                        {
+                                            <form method="post" asp-action="MoveParameter" class="d-inline">
+                                                <input type="hidden" name="index" value="@i" />
+                                                <input type="hidden" name="direction" value="up" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary btn-move" title="Move Up">&#x25B2;</button>
+                                            </form>
+                                        }
+                                        @if (i < Model.Parameters.Count - 1)
+                                        {
+                                            <form method="post" asp-action="MoveParameter" class="d-inline">
+                                                <input type="hidden" name="index" value="@i" />
+                                                <input type="hidden" name="direction" value="down" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary btn-move" title="Move Down">&#x25BC;</button>
+                                            </form>
+                                        }
+                                        <form method="post" asp-action="DeleteParameter" class="d-inline">
+                                            <input type="hidden" name="index" value="@i" />
+                                            <button type="submit" class="btn btn-sm btn-del py-0">&#x2715;</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sync Classes -->
+        <div class="col-md-7 d-flex flex-column" style="min-height:0;">
+            <div class="card flex-grow-1 d-flex flex-column" style="min-height:0;">
+                <div class="card-header py-1 d-flex justify-content-between align-items-center">
+                    <strong>Sync Classes</strong>
+                    <button type="button" class="btn btn-sm btn-oi-primary" data-bs-toggle="modal" data-bs-target="#addClassModal">+ Add</button>
+                </div>
+                <div class="card-body p-0 grid-scroll">
+                    <table class="table table-sm table-bordered table-oi-striped mb-0">
+                        <thead class="sticky-top">
+                            <tr><th>Class Name</th><th>M2M</th><th>Properties</th><th style="width:110px"></th></tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.SyncClasses.Count; i++)
+                            {
+                                var sc = Model.SyncClasses[i];
+                                <tr>
+                                    <td>@sc.ClassName</td>
+                                    <td>@(sc.IsManyToMany ? "Yes" : "No")</td>
+                                    <td>@sc.PropertyNames</td>
+                                    <td class="td-actions">
+                                        @if (i > 0)
+                                        {
+                                            <form method="post" asp-action="MoveClass" class="d-inline">
+                                                <input type="hidden" name="index" value="@i" />
+                                                <input type="hidden" name="direction" value="up" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary btn-move" title="Move Up">&#x25B2;</button>
+                                            </form>
+                                        }
+                                        @if (i < Model.SyncClasses.Count - 1)
+                                        {
+                                            <form method="post" asp-action="MoveClass" class="d-inline">
+                                                <input type="hidden" name="index" value="@i" />
+                                                <input type="hidden" name="direction" value="down" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary btn-move" title="Move Down">&#x25BC;</button>
+                                            </form>
+                                        }
+                                        <button type="button" class="btn btn-sm btn-edit-oi py-0" title="Edit"
+                                                onclick="openEditClassModal(@i)">&#x270E;</button>
+                                        <form method="post" asp-action="DeleteClass" class="d-inline">
+                                            <input type="hidden" name="index" value="@i" />
+                                            <button type="submit" class="btn btn-sm btn-del py-0">&#x2715;</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions bar — pinned at bottom -->
+    <div class="card mt-2 section-fixed">
+        <div class="card-body py-2 d-flex gap-2 flex-wrap">
+            <form method="post" asp-action="ImportMetadata" enctype="multipart/form-data" class="d-inline" id="importForm">
+                <label class="btn btn-sm btn-oi-tonal mb-0" style="cursor:pointer;">
+                    Import Metadata
+                    <input type="file" name="file" accept=".json" class="d-none" onchange="this.closest('form').submit();" />
+                </label>
+            </form>
+            <div class="ms-auto d-flex gap-2">
+                <form method="post" asp-action="SaveMetadata" class="d-inline">
+                    <input type="hidden" name="namespace" value="@Model.Namespace" />
+                    <input type="hidden" name="className" value="@Model.ClassName" />
+                    <button type="submit" class="btn btn-sm btn-oi-outline">Save Metadata (JSON)</button>
+                </form>
+                <form method="post" asp-action="GeneratePowerShell" class="d-inline">
+                    <input type="hidden" name="namespace" value="@Model.Namespace" />
+                    <input type="hidden" name="className" value="@Model.ClassName" />
+                    <button type="submit" class="btn btn-sm btn-oi-primary" @(hasClasses ? "" : "disabled")>Generate PowerShell (ZIP)</button>
+                </form>
+                <form method="post" asp-action="GenerateNet" class="d-inline">
+                    <input type="hidden" name="namespace" value="@Model.Namespace" />
+                    <input type="hidden" name="className" value="@Model.ClassName" />
+                    <button type="submit" class="btn btn-sm btn-oi-primary" @(hasClasses ? "" : "disabled")>Generate .NET (ZIP)</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ MODAL: Add Parameter ============ -->
+<div class="modal fade" id="addParamModal" tabindex="-1" aria-labelledby="addParamLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-action="AddParameter">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addParamLabel" style="color: var(--oi-primary);">Add Parameter</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="ParamName" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <input type="text" name="Description" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data Type</label>
+                        <select name="DataType" class="form-select">
+                            @foreach (var dt in Enum.GetValues<DataTypes>())
+                            {
+                                <option value="@dt">@dt</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="IsSensibleData" value="true" class="form-check-input" />
+                        <label class="form-check-label">Sensitive</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-oi-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-oi-primary">Add Parameter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============ MODAL: Add Sync Class ============ -->
+<div class="modal fade" id="addClassModal" tabindex="-1" aria-labelledby="addClassLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <form method="post" asp-action="AddClass">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addClassLabel" style="color: var(--oi-primary);">Add Sync Class</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Class Name</label>
+                            <input type="text" name="ClassName" class="form-control" required />
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" name="IsManyToMany" value="true" class="form-check-input" id="addIsManyToMany"
+                                       onchange="toggleM2MColumns('addClassModal', this.checked)" />
+                                <label class="form-check-label" for="addIsManyToMany">Many-to-Many</label>
+                            </div>
+                        </div>
+                        <div class="col-md-5 d-flex align-items-end">
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="showM2MHelp()">
+                                <strong>!</strong> Many-to-Many Info
+                            </button>
+                        </div>
+                    </div>
+
+                    <h6>Properties</h6>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm" id="addPropsTable">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Property</th><th>Type</th><th>PK</th>
+                                    <th class="m2m-col" style="display:none;">Combined PK</th>
+                                    <th class="m2m-col" style="display:none;">Incl. in PK</th>
+                                    <th>Unique</th>
+                                    <th>Mandatory</th><th>AutoFill</th><th>Display</th>
+                                    <th>Revision</th><th>Multi</th><th>Order</th><th></th><th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="addPropsBody">
+                                <tr>
+                                    <td><input type="text" name="Properties[0].PropertyName" class="form-control form-control-sm" /></td>
+                                    <td>
+                                        <select name="Properties[0].DataType" class="form-select form-select-sm">
+                                            @foreach (var dt in Enum.GetValues<DataTypes>())
+                                            {
+                                                <option value="@dt">@dt</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td><input type="checkbox" name="Properties[0].IsPrimaryKey" value="true" /></td>
+                                    <td class="m2m-col" style="display:none;"><input type="checkbox" name="Properties[0].IsCombinedPrimaryKey" value="true" /></td>
+                                    <td class="m2m-col" style="display:none;"><input type="checkbox" name="Properties[0].IncludeInCombinedPrimaryKey" value="true" /></td>
+                                    <td><input type="checkbox" name="Properties[0].IsUniqueKey" value="true" /></td>
+                                    <td><input type="checkbox" name="Properties[0].IsMandatory" value="true" /></td>
+                                    <td><input type="checkbox" name="Properties[0].IsAutoFill" value="true" /></td>
+                                    <td><input type="checkbox" name="Properties[0].IsDisplay" value="true" /></td>
+                                    <td><input type="checkbox" name="Properties[0].IsRevision" value="true" /></td>
+                                    <td><input type="checkbox" name="Properties[0].IsMultivalue" value="true" /></td>
+                                    <td><input type="number" name="Properties[0].OrderNumber" value="0" class="form-control form-control-sm" style="width:60px" /></td>
+                                    <td></td>
+                                    <td class="text-nowrap">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary btn-move" onclick="movePropertyRow(this, -1)" title="Move Up">&#x25B2;</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary btn-move" onclick="movePropertyRow(this, 1)" title="Move Down">&#x25BC;</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-oi-outline mt-2" onclick="addPropertyRow('addPropsBody', addPropIndex++)">+ Add Property Row</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-oi-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-oi-primary">Add Class</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============ MODAL: Edit Sync Class ============ -->
+<div class="modal fade" id="editClassModal" tabindex="-1" aria-labelledby="editClassLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <form method="post" asp-action="EditClass" id="editClassForm">
+                <input type="hidden" name="index" id="editClassIndex" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editClassLabel" style="color: var(--oi-primary);">Edit Sync Class</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Class Name</label>
+                            <input type="text" name="ClassName" id="editClassName" class="form-control" required />
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" name="IsManyToMany" value="true" class="form-check-input" id="editIsManyToMany"
+                                       onchange="toggleM2MColumns('editClassModal', this.checked)" />
+                                <label class="form-check-label" for="editIsManyToMany">Many-to-Many</label>
+                            </div>
+                        </div>
+                        <div class="col-md-5 d-flex align-items-end">
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="showM2MHelp()">
+                                <strong>!</strong> Many-to-Many Info
+                            </button>
+                        </div>
+                    </div>
+
+                    <h6>Properties</h6>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm" id="editPropsTable">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Property</th><th>Type</th><th>PK</th>
+                                    <th class="m2m-col" style="display:none;">Combined PK</th>
+                                    <th class="m2m-col" style="display:none;">Incl. in PK</th>
+                                    <th>Unique</th>
+                                    <th>Mandatory</th><th>AutoFill</th><th>Display</th>
+                                    <th>Revision</th><th>Multi</th><th>Order</th><th></th><th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="editPropsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-oi-outline mt-2" onclick="addPropertyRow('editPropsBody', editPropIndex++)">+ Add Property Row</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-oi-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-oi-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const dataTypes = @Html.Raw(JsonSerializer.Serialize(Enum.GetNames<DataTypes>()));
+    let addPropIndex = 1;
+    let editPropIndex = 0;
+
+    // Sync classes data for edit modal
+    const syncClassesData = @Html.Raw(JsonSerializer.Serialize(Model.SyncClasses.Select(sc => new {
+        sc.ClassName,
+        sc.IsManyToMany,
+        Properties = sc.Properties.Select(p => new {
+            p.PropertyName,
+            DataType = p.DataType.ToString(),
+            p.IsPrimaryKey,
+            p.IsCombinedPrimaryKey,
+            p.IncludeInCombinedPrimaryKey,
+            p.IsUniqueKey,
+            p.IsMandatory,
+            p.IsAutoFill,
+            p.IsDisplay,
+            p.IsRevision,
+            p.IsMultivalue,
+            p.OrderNumber
+        })
+    }), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+
+    function addPropertyRow(tbodyId, index) {
+        const i = index;
+        let opts = dataTypes.map(d => `<option value="${d}">${d}</option>`).join('');
+        const m2mDisplay = document.getElementById(tbodyId).closest('.modal')
+            .querySelector('[id$="IsManyToMany"]').checked ? '' : 'display:none;';
+        const row = `<tr>
+            <td><input type="text" name="Properties[${i}].PropertyName" class="form-control form-control-sm" /></td>
+            <td><select name="Properties[${i}].DataType" class="form-select form-select-sm">${opts}</select></td>
+            <td><input type="checkbox" name="Properties[${i}].IsPrimaryKey" value="true" /></td>
+            <td class="m2m-col" style="${m2mDisplay}"><input type="checkbox" name="Properties[${i}].IsCombinedPrimaryKey" value="true" /></td>
+            <td class="m2m-col" style="${m2mDisplay}"><input type="checkbox" name="Properties[${i}].IncludeInCombinedPrimaryKey" value="true" /></td>
+            <td><input type="checkbox" name="Properties[${i}].IsUniqueKey" value="true" /></td>
+            <td><input type="checkbox" name="Properties[${i}].IsMandatory" value="true" /></td>
+            <td><input type="checkbox" name="Properties[${i}].IsAutoFill" value="true" /></td>
+            <td><input type="checkbox" name="Properties[${i}].IsDisplay" value="true" /></td>
+            <td><input type="checkbox" name="Properties[${i}].IsRevision" value="true" /></td>
+            <td><input type="checkbox" name="Properties[${i}].IsMultivalue" value="true" /></td>
+            <td><input type="number" name="Properties[${i}].OrderNumber" value="${i}" class="form-control form-control-sm" style="width:60px" /></td>
+            <td><button type="button" class="btn btn-sm btn-del py-0" onclick="this.closest('tr').remove(); reindexProperties(this.closest('tbody'))">&#x2715;</button></td>
+            <td class="text-nowrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-move" onclick="movePropertyRow(this, -1)" title="Move Up">&#x25B2;</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-move" onclick="movePropertyRow(this, 1)" title="Move Down">&#x25BC;</button>
+            </td>
+        </tr>`;
+        document.getElementById(tbodyId).insertAdjacentHTML('beforeend', row);
+    }
+
+    function toggleM2MColumns(modalId, show) {
+        const modal = document.getElementById(modalId);
+        modal.querySelectorAll('.m2m-col').forEach(el => {
+            el.style.display = show ? '' : 'none';
+        });
+    }
+
+    function showM2MHelp() {
+        alert(
+            "For Many-To-Many object, if it contains only foreign keys\n" +
+            "    (No unique primary key, e.g. UserID and GroupID):\n" +
+            "Create a virtual primary key (check 'Combined (virtual) primary key')\n" +
+            "    which will combine foreign keys in a vertical bar '|' separated string.\n" +
+            "Mark each foreign key as 'Field to include in combined primary key'.\n" +
+            "If unique primary key exists in target system record - just check 'IsPrimaryKey' checkbox."
+        );
+    }
+
+    function openEditClassModal(index) {
+        const sc = syncClassesData[index];
+        document.getElementById('editClassIndex').value = index;
+        document.getElementById('editClassName').value = sc.className;
+        const m2mCheckbox = document.getElementById('editIsManyToMany');
+        m2mCheckbox.checked = sc.isManyToMany;
+
+        const tbody = document.getElementById('editPropsBody');
+        tbody.innerHTML = '';
+        editPropIndex = 0;
+
+        sc.properties.forEach((p, i) => {
+            let opts = dataTypes.map(d => `<option value="${d}" ${d === p.dataType ? 'selected' : ''}>${d}</option>`).join('');
+            const m2mDisplay = sc.isManyToMany ? '' : 'display:none;';
+            const row = `<tr>
+                <td><input type="text" name="Properties[${i}].PropertyName" class="form-control form-control-sm" value="${p.propertyName}" /></td>
+                <td><select name="Properties[${i}].DataType" class="form-select form-select-sm">${opts}</select></td>
+                <td><input type="checkbox" name="Properties[${i}].IsPrimaryKey" value="true" ${p.isPrimaryKey ? 'checked' : ''} /></td>
+                <td class="m2m-col" style="${m2mDisplay}"><input type="checkbox" name="Properties[${i}].IsCombinedPrimaryKey" value="true" ${p.isCombinedPrimaryKey ? 'checked' : ''} /></td>
+                <td class="m2m-col" style="${m2mDisplay}"><input type="checkbox" name="Properties[${i}].IncludeInCombinedPrimaryKey" value="true" ${p.includeInCombinedPrimaryKey ? 'checked' : ''} /></td>
+                <td><input type="checkbox" name="Properties[${i}].IsUniqueKey" value="true" ${p.isUniqueKey ? 'checked' : ''} /></td>
+                <td><input type="checkbox" name="Properties[${i}].IsMandatory" value="true" ${p.isMandatory ? 'checked' : ''} /></td>
+                <td><input type="checkbox" name="Properties[${i}].IsAutoFill" value="true" ${p.isAutoFill ? 'checked' : ''} /></td>
+                <td><input type="checkbox" name="Properties[${i}].IsDisplay" value="true" ${p.isDisplay ? 'checked' : ''} /></td>
+                <td><input type="checkbox" name="Properties[${i}].IsRevision" value="true" ${p.isRevision ? 'checked' : ''} /></td>
+                <td><input type="checkbox" name="Properties[${i}].IsMultivalue" value="true" ${p.isMultivalue ? 'checked' : ''} /></td>
+                <td><input type="number" name="Properties[${i}].OrderNumber" value="${p.orderNumber}" class="form-control form-control-sm" style="width:60px" /></td>
+                <td><button type="button" class="btn btn-sm btn-del py-0" onclick="this.closest('tr').remove(); reindexProperties(this.closest('tbody'))">&#x2715;</button></td>
+                <td class="text-nowrap">
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-move" onclick="movePropertyRow(this, -1)" title="Move Up">&#x25B2;</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-move" onclick="movePropertyRow(this, 1)" title="Move Down">&#x25BC;</button>
+                </td>
+            </tr>`;
+            tbody.insertAdjacentHTML('beforeend', row);
+            editPropIndex = i + 1;
+        });
+
+        toggleM2MColumns('editClassModal', sc.isManyToMany);
+        new bootstrap.Modal(document.getElementById('editClassModal')).show();
+    }
+
+    function movePropertyRow(btn, direction) {
+        const row = btn.closest('tr');
+        const tbody = row.closest('tbody');
+        if (direction === -1 && row.previousElementSibling) {
+            tbody.insertBefore(row, row.previousElementSibling);
+        } else if (direction === 1 && row.nextElementSibling) {
+            tbody.insertBefore(row.nextElementSibling, row);
+        }
+        reindexProperties(tbody);
+    }
+
+    function reindexProperties(tbody) {
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach((row, i) => {
+            row.querySelectorAll('[name]').forEach(el => {
+                el.name = el.name.replace(/Properties\[\d+\]/, `Properties[${i}]`);
+            });
+        });
+    }
+</script>
+}

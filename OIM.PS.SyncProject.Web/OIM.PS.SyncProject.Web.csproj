@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+	<Authors>Paul Sherman</Authors>
+	<Company>One Identity LLC.</Company>
+	<AssemblyVersion>1.0.0.0</AssemblyVersion>
+	<FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OIM.PS.SyncProject.Common\OIM.PS.SyncProject.Common.csproj" />
+    <ProjectReference Include="..\OIM.PS.SyncProject.Generator\OIM.PS.SyncProject.Generator.csproj" />
+  </ItemGroup>
+
+</Project>

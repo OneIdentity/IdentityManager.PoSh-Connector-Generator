@@ -1,0 +1,65 @@
+﻿@{
+    ViewData["Title"] = "Home";
+    ViewData["HideNavbar"] = true;
+}
+
+<style>
+    .home-bg {
+        background-color: var(--oi-primary);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--oi-on-primary);
+        margin: 0 -1rem -60px -1rem;
+        padding: 2rem;
+        font-family: var(--oi-font);
+        position: relative;
+        overflow: hidden;
+    }
+    .home-bg h1 { color: var(--oi-on-primary); font-weight: 700; }
+    .home-bg h2 { color: var(--oi-primary-light); font-weight: 400; }
+    .home-bg .btn-start {
+        background-color: var(--oi-on-primary);
+        color: var(--oi-primary);
+        font-weight: 600;
+        border: none;
+        border-radius: 4px;
+    }
+    .home-bg .btn-start:hover {
+        background-color: var(--oi-primary-light);
+        color: var(--oi-secondary);
+    }
+    .home-bg .btn-import {
+        border: 2px solid var(--oi-on-primary);
+        color: var(--oi-on-primary);
+        background: transparent;
+        font-weight: 600;
+        border-radius: 4px;
+    }
+    .home-bg .btn-import:hover {
+        background-color: rgba(255,255,255,0.15);
+        color: var(--oi-on-primary);
+    }
+</style>
+
+<div class="home-bg">
+    <img src="~/images/Logo.png" alt="One Identity Logo" style="max-height: 120px; margin-bottom: 2rem;" />
+    <h1 class="display-4 mb-1">One Identity Manager</h1>
+    <h2 class="display-6 mb-4">PowerShell Connector Generator</h2>
+    <hr style="border-color: rgba(255,255,255,0.3); width: 50%; margin-bottom: 2rem;" />
+    <div class="d-flex gap-3">
+        <a asp-controller="Generator" asp-action="NewProject" class="btn btn-start btn-lg px-4">
+            New Project
+        </a>
+        <form method="post" asp-controller="Generator" asp-action="ImportMetadata" enctype="multipart/form-data" class="d-inline">
+            <label class="btn btn-import btn-lg px-4 mb-0" style="cursor:pointer;">
+                Import Metadata
+                <input type="file" name="file" accept=".json" class="d-none"
+                       onchange="this.closest('form').submit();" />
+            </label>
+        </form>
+    </div>
+    <p class="mt-4 small" style="color: var(--oi-primary-light);">Generate PowerShell and .NET connector code from metadata definitions.</p>
+</div>

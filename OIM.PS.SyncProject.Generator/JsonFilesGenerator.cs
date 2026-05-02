@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using OIM.PS.SyncProject.Common;
 using System;
 using System.Collections.Generic;
-using System.DirectoryServices.ActiveDirectory;
 using System.IO;
 using System.Linq;
 using System.Text;
