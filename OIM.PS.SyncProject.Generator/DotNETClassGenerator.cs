@@ -1,4 +1,4 @@
-﻿using OIM.PS.SyncProject.Common;
+using OIM.PS.SyncProject.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -140,7 +140,7 @@ namespace OIM.PS.SyncProject.Generator
 
             List<GenClassProp> props = synClass.Properties; 
 
-            List<GenClassProp> primProps = synClass.Properties.Where(q => q.IsPrimaryKey || q.IncludeInCombinedPrimaryKey).ToList();
+            List<GenClassProp> primProps = synClass.Properties.Where(q => q.IsPrimaryKey || q.IsCombinedPrimaryKey).ToList();
 
             
             foreach (var item in primProps)

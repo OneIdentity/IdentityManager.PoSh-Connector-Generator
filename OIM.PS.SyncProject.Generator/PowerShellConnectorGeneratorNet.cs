@@ -1,4 +1,4 @@
-﻿using OIM.PS.SyncProject.Common;
+using OIM.PS.SyncProject.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -304,7 +304,7 @@ namespace OIM.PS.SyncProject.Generator
             //GetAll - no parameters get mapped.
             var map = new List<PCDefClassPropertyCommandMappingsMap>() { };
 
-            if (!(item.IsAutoFill || item.IsPrimaryKey))
+            if (!(item.IsAutoFill || item.IsPrimaryKey || item.IsCombinedPrimaryKey))
             {
                 map.Add(new PCDefClassPropertyCommandMappingsMap()
                 {
@@ -320,7 +320,7 @@ namespace OIM.PS.SyncProject.Generator
             }
 
             //P.S. "id" is mapped to Delete command. Nothing else
-            if (item.IsPrimaryKey == true)
+            if (item.IsPrimaryKey == true || item.IsCombinedPrimaryKey == true)
             {
                 map.Add(new PCDefClassPropertyCommandMappingsMap()
                 {
@@ -585,7 +585,7 @@ namespace OIM.PS.SyncProject.Generator
 
             var argList = GenerateArgList(_meta.Parameters);
 
-            sb.AppendLine("        $global:connector = New-Object -TypeName $FQTN -ArgumentList " + argList);
+            sb.AppendLine("        $global:connector = New-Object -TypeName $FQTN -ArgumentList " + argList + ",$FolderContainingDLLs");
             sb.AppendLine("        $global:namespace = $Namespace ");
             sb.Append("        ]]> ");
 
@@ -706,12 +706,12 @@ namespace OIM.PS.SyncProject.Generator
                 //P.S. We do need to pass Primary Key to the command.
                 //But we don't need to pass AutoFill fields
                 //because we don't update them.
-                if (field.IsAutoFill && !field.IsPrimaryKey)
+                if (field.IsAutoFill && !field.IsPrimaryKey && !field.IncludeInCombinedPrimaryKey)
                 {
                     continue;
                 }
 
-                if(field.IsPrimaryKey)
+                if (field.IsPrimaryKey || field.IncludeInCombinedPrimaryKey)
                 {
                     //idFieldName = field.PropertyName;
                     sbDll.Append($"${field.PropertyName},");
@@ -719,7 +719,7 @@ namespace OIM.PS.SyncProject.Generator
 
                 sb.AppendLine("           [parameter(Mandatory =$false, ValueFromPipelineByPropertyName =$true)] ");
 
-                if (field.IsMandatory || field.IsPrimaryKey)
+                if (field.IsMandatory || field.IsPrimaryKey || field.IncludeInCombinedPrimaryKey)
                 {
                     sb.AppendLine("           [ValidateNotNullOrEmpty()] ");
                 }                
@@ -746,7 +746,9 @@ namespace OIM.PS.SyncProject.Generator
             string tempDll = sbDll.ToString().TrimEnd().TrimEnd(',');
 
             sb.AppendLine("        )  ");
-            sb.AppendLine($"            $global:connector.{className}Update({tempDll}, $PSBoundParameters) ");
+            string updateCall = string.IsNullOrEmpty(tempDll) ? "$PSBoundParameters" : $"{tempDll}, $PSBoundParameters";
+            sb.AppendLine($"            $global:connector.{className}Update({updateCall}) ");
+
             sb.Append("      ]]> ");
 
             return sb.ToString();

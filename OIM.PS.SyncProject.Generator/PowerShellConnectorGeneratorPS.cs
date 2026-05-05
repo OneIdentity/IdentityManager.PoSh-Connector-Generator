@@ -1,4 +1,4 @@
-﻿using OIM.PS.SyncProject.Common;
+using OIM.PS.SyncProject.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -282,7 +282,7 @@ namespace OIM.PS.SyncProject.Generator
             //GetAll - no parameters get mapped.
             var map = new List<PCDefClassPropertyCommandMappingsMap>() { };
 
-            if (!(item.IsAutoFill || item.IsPrimaryKey))
+            if (!(item.IsAutoFill || item.IsPrimaryKey || item.IsCombinedPrimaryKey))
             {
                 map.Add(new PCDefClassPropertyCommandMappingsMap()
                 {
