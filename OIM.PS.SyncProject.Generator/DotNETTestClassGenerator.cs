@@ -87,7 +87,10 @@ namespace OIM.PS.SyncProject.Generator
             }
 
             sb.AppendLine("");
-            sb.Append($"            {_origClassName} conn = new {_origClassName}({sbTemp.ToString().Trim().TrimEnd(',')}");
+            sb.AppendLine("            // Path to folder containing test JSON files - passed as command line argument $(SolutionDir)");
+            sb.AppendLine("            string testFolder = args.Length > 0 ? args[0] : AppDomain.CurrentDomain.BaseDirectory;");
+            sb.AppendLine("");
+            sb.Append($"            {_origClassName} conn = new {_origClassName}({sbTemp}testFolder");
             sb.Append(");");
 
             sb.AppendLine("");

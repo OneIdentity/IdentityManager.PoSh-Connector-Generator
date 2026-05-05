@@ -59,7 +59,8 @@ namespace OIM.PS.SyncProject.Generator
             sb.AppendLine("        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions");
             sb.AppendLine("        {");
             sb.AppendLine("            WriteIndented = true,");
-            sb.AppendLine("            PropertyNameCaseInsensitive = true");
+            sb.AppendLine("            PropertyNameCaseInsensitive = true,");
+            sb.AppendLine("            IncludeFields = true");
             sb.AppendLine("        };");
 
             sb.AppendLine("");
@@ -73,7 +74,7 @@ namespace OIM.PS.SyncProject.Generator
             {
                 sbTemp.Append($"string {item.ParamName},");
             }
-            sb.AppendLine(sbTemp.ToString().TrimEnd(',') + ")");
+            sb.AppendLine(sbTemp.ToString() + "string testFolder = null)");
             sb.AppendLine("        {");
             sb.AppendLine("");
 
@@ -82,10 +83,11 @@ namespace OIM.PS.SyncProject.Generator
                 sb.AppendLine($"            _{item.ParamName.ToLower()} = {item.ParamName};");
             }
             sb.AppendLine("");
-            sb.AppendLine("            // Set JSON file paths relative to executable location");
+            sb.AppendLine("            // Set JSON file paths - use testFolder if provided, otherwise use executable directory");
+            sb.AppendLine("            string _jsonDir = !string.IsNullOrEmpty(testFolder) ? testFolder : AppDomain.CurrentDomain.BaseDirectory;");
             foreach (var item in _meta.SyncClasses) 
             {
-                sb.AppendLine($"            _{item.ClassName.ToLower()}FilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, \"{item.ClassName.ToLower()}.json\");");
+                sb.AppendLine($"            _{item.ClassName.ToLower()}FilePath = Path.Combine(_jsonDir, \"{item.ClassName.ToLower()}.json\");");
             }
 
             sb.AppendLine("        }");
@@ -132,29 +134,7 @@ namespace OIM.PS.SyncProject.Generator
             //P.S. Populate To String
             sb.AppendLine("        public static string ObjectToString(object obj)");
             sb.AppendLine("        {");
-            sb.AppendLine("            StringBuilder sb = new StringBuilder();");
-            sb.AppendLine("");
-            sb.AppendLine("            var bindingFlags = System.Reflection.BindingFlags.Instance |");
-            sb.AppendLine("                                    System.Reflection.BindingFlags.NonPublic |");
-            sb.AppendLine("                                    System.Reflection.BindingFlags.Public;");
-            sb.AppendLine("");
-            sb.AppendLine("");
-            sb.AppendLine("            List <KeyValuePair<string, string>> listValues = obj.GetType()");
-            sb.AppendLine("                                    .GetFields(bindingFlags)");
-            sb.AppendLine("                                    .Where(value => value != null)");
-            sb.AppendLine("                                    .Select(field => new KeyValuePair<string, string>(field.Name, field.GetValue(obj).ToString()))");
-            sb.AppendLine("                                    .ToList();");
-
-            sb.AppendLine("            sb.AppendLine(obj.GetType().Name + \":\");");
-
-            sb.AppendLine("            foreach (var item in listValues)");
-            sb.AppendLine("            {");
-            sb.AppendLine("                // Note that you need to cast to string on objects that don't support ToSting() native! Maybe a new method to cast.");
-            sb.AppendLine("                sb.Append(item.Key);");
-            sb.AppendLine("                sb.Append(\":\");");
-            sb.AppendLine("                sb.AppendLine(item.Value);");
-            sb.AppendLine("            }");
-            sb.AppendLine("            return sb.ToString();");
+            sb.AppendLine("            return JsonSerializer.Serialize(obj, _jsonOptions);");
             sb.AppendLine("        }");
             sb.AppendLine("");
 
@@ -201,7 +181,7 @@ namespace OIM.PS.SyncProject.Generator
 
             List<GenClassProp> props = synClass.Properties; 
 
-            List<GenClassProp> primProps = synClass.Properties.Where(q => q.IsPrimaryKey).ToList();
+            List<GenClassProp> primProps = synClass.Properties.Where(q => q.IsPrimaryKey || q.IncludeInCombinedPrimaryKey).ToList();
 
 
             foreach (var item in primProps)
@@ -350,12 +330,19 @@ namespace OIM.PS.SyncProject.Generator
             sb.AppendLine("");
 
             // Update
+            string updateSig = string.IsNullOrEmpty(strPrimParams)
+                ? "System.Collections.Hashtable updates"
+                : $"{strPrimParams}, System.Collections.Hashtable updates";
+            string updateCall = string.IsNullOrEmpty(strPrimParamsInd)
+                ? "updates"
+                : $"{strPrimParamsInd}, updates";
+
             sb.AppendLine("        /// <summary>");
             sb.AppendLine("        /// Demo only! Put real implementation here.");
             sb.AppendLine("        /// Reads all from file, updates the matching record, saves back to file.");
             sb.AppendLine("        /// Hashtable holds a list of modified fields and their new values.");
             sb.AppendLine("        /// <summary>");
-            sb.AppendLine($"        public {synClass.ClassName} {synClass.ClassName}Update({strPrimParams}, System.Collections.Hashtable updates)");
+            sb.AppendLine($"        public {synClass.ClassName} {synClass.ClassName}Update({updateSig})");
             sb.AppendLine("        {");
             sb.AppendLine($"            var items = ReadAll{synClass.ClassName}s();");
             sb.AppendLine($"            var {lclClass} = items.Where(q => {whereClause}).FirstOrDefault();");

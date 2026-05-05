@@ -249,16 +249,17 @@
 <div class="modal fade" id="addClassModal" tabindex="-1" aria-labelledby="addClassLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <form method="post" asp-action="AddClass">
+            <form method="post" asp-action="AddClass" id="addClassForm">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addClassLabel" style="color: var(--oi-primary);">Add Sync Class</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Class Name</label>
-                            <input type="text" name="ClassName" class="form-control" required />
+                        <div id="addClassError" class="alert alert-danger d-none mb-2" role="alert"></div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Class Name</label>
+                                <input type="text" name="ClassName" class="form-control" required />
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
                             <div class="form-check">
@@ -339,6 +340,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <div id="editClassError" class="alert alert-danger d-none mb-2" role="alert"></div>
                     <div class="row g-2 mb-3">
                         <div class="col-md-4">
                             <label class="form-label">Class Name</label>
@@ -553,5 +555,45 @@
             });
         });
     }
+    function validateClassForm(tbodyId, errorDivId) {
+        const tbody = document.getElementById(tbodyId);
+        const errorDiv = document.getElementById(errorDivId);
+        const rows = [...tbody.querySelectorAll('tr')];
+        const msg = validateClassProps(rows);
+        if (msg) {
+            errorDiv.textContent = msg;
+            errorDiv.classList.remove('d-none');
+            return false;
+        }
+        errorDiv.classList.add('d-none');
+        return true;
+    }
+
+    function validateClassProps(rows) {
+        const filledRows = rows.filter(r => r.querySelector('[name$=".PropertyName"]')?.value?.trim());
+        if (filledRows.length < 2)
+            return 'Class must contain more than one property.';
+
+        const hasPK = filledRows.some(r => r.querySelector('[name$=".IsPrimaryKey"]')?.checked);
+        const hasCombinedPK = filledRows.some(r => r.querySelector('[name$=".IsCombinedPrimaryKey"]')?.checked);
+        const includeInPKCount = filledRows.filter(r => r.querySelector('[name$=".IncludeInCombinedPrimaryKey"]')?.checked).length;
+
+        if (!hasPK && !hasCombinedPK)
+            return 'At least one property must be marked as Primary Key or Combined Primary Key.';
+
+        if (hasPK && hasCombinedPK)
+            return "Can't contain both 'Primary Key' and 'Combined Primary Key' fields.";
+
+        if (hasCombinedPK && includeInPKCount < 2)
+            return 'If a field is marked as Combined PK, at least 2 fields must be marked as "Include in PK".\nIf only one field needs to be included in PK then just mark it as PK.';
+
+        return null;
+    }
+    document.getElementById('addClassForm').addEventListener('submit', function(e) {
+        if (!validateClassForm('addPropsBody', 'addClassError')) e.preventDefault();
+    });
+    document.getElementById('editClassForm').addEventListener('submit', function(e) {
+        if (!validateClassForm('editPropsBody', 'editClassError')) e.preventDefault();
+    });
 </script>
 }

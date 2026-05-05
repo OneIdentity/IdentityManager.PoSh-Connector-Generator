@@ -325,11 +325,18 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			string syncXML = SerializeXML(def);
 			WriteStringToFile(xmlFilePS, syncXML);
 			//--------------------------------------------------------------------------------
-			var cg = Activator.CreateInstance(typePowerShellModule, new object[] { _meta });
-			method = typePowerShellModule.GetMethod("GenerateModule");
-			string strModule = method.Invoke(cg, new object[] { path }).ToString();
-			WriteStringToFile(psModuleFile, strModule);
-			//--------------------------------------------------------------------------------
+				var cg = Activator.CreateInstance(typePowerShellModule, new object[] { _meta });
+				method = typePowerShellModule.GetMethod("GenerateModule");
+				string strModule = method.Invoke(cg, new object[] { path }).ToString();
+				WriteStringToFile(psModuleFile, strModule);
+				//--------------------------------------------------------------------------------
+				var typePowerShellTest = DLL.GetType("OIM.PS.SyncProject.Generator.PowerShellTestGenerator");
+				var ptg = Activator.CreateInstance(typePowerShellTest, new object[] { _meta });
+				method = typePowerShellTest.GetMethod("GenerateTestScript");
+				string psTestScript = method.Invoke(ptg, null).ToString();
+				string psTestFile = Path.Combine(path, txtNamespace.Text.Trim() + "_TEST.ps1");
+				WriteStringToFile(psTestFile, psTestScript);
+				//--------------------------------------------------------------------------------
 
 			////string psXML = GenerateSyncProjectXML(DLL, "OIM.PS.SyncProject.Generator.PowerShellConnectorGeneratorPS");
 

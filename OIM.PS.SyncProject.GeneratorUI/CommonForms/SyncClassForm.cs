@@ -117,10 +117,16 @@ namespace OIM.PS.SyncProject.Common
 			}
 
 			if (_props.Exists(q => q.IsCombinedPrimaryKey) && !_props.Exists(q => q.IncludeInCombinedPrimaryKey))
-			{
-				MessageBox.Show("At least one property must be marked as 'Included in Primary Key' if exists property 'Combined Primary Key'");
-				return;
-			}
+				{
+					MessageBox.Show("If a field is marked as Combined PK, at least 2 fields must be marked as \"Include in PK\".\r\nIf only one field needs to be included in PK then just mark it as PK.");
+					return;
+				}
+
+				if (_props.Exists(q => q.IsCombinedPrimaryKey) && _props.Count(q => q.IncludeInCombinedPrimaryKey) < 2)
+				{
+					MessageBox.Show("If a field is marked as Combined PK, at least 2 fields must be marked as \"Include in PK\".\r\nIf only one field needs to be included in PK then just mark it as PK.");
+					return;
+				}
 
 			if (_props.Exists(q => q.IsCombinedPrimaryKey) && _props.Exists(q => q.IsPrimaryKey))
 			{

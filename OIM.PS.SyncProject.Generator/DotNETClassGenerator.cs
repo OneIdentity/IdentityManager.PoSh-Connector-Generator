@@ -59,7 +59,7 @@ namespace OIM.PS.SyncProject.Generator
             {
                 sbTemp.Append($"string {item.ParamName},");
             }
-            sb.AppendLine(sbTemp.ToString().TrimEnd(',') + ")");
+            sb.AppendLine(sbTemp.ToString() + "string testFolder = null)");
             sb.AppendLine("        {");
             sb.AppendLine("");
 
@@ -69,7 +69,7 @@ namespace OIM.PS.SyncProject.Generator
             {
                 sbTemp.Append($"{item.ParamName}, ");
             }
-            sb.Append($"{sbTemp.ToString().Trim().TrimEnd(',')});");
+            sb.Append($"{sbTemp}testFolder);");
 
 
             sb.AppendLine("");
@@ -140,7 +140,7 @@ namespace OIM.PS.SyncProject.Generator
 
             List<GenClassProp> props = synClass.Properties; 
 
-            List<GenClassProp> primProps = synClass.Properties.Where(q => q.IsPrimaryKey).ToList();
+            List<GenClassProp> primProps = synClass.Properties.Where(q => q.IsPrimaryKey || q.IncludeInCombinedPrimaryKey).ToList();
 
             
             foreach (var item in primProps)
@@ -193,9 +193,16 @@ namespace OIM.PS.SyncProject.Generator
             sb.AppendLine("        }");
             sb.AppendLine("");
                         
-            sb.AppendLine($"        public {synClass.ClassName} {synClass.ClassName}Update({strPrimParams}, System.Collections.Hashtable updates)");
-            sb.AppendLine("        {");            
-            sb.AppendLine($"            return _impl.{synClass.ClassName}Update({strPrimParamsInd}, updates);");
+            string updateSig = string.IsNullOrEmpty(strPrimParams)
+                ? "System.Collections.Hashtable updates"
+                : $"{strPrimParams}, System.Collections.Hashtable updates";
+            string updateCall = string.IsNullOrEmpty(strPrimParamsInd)
+                ? "updates"
+                : $"{strPrimParamsInd}, updates";
+
+            sb.AppendLine($"        public {synClass.ClassName} {synClass.ClassName}Update({updateSig})");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            return _impl.{synClass.ClassName}Update({updateCall});");
             sb.AppendLine("        }");
             sb.AppendLine("");
                         
