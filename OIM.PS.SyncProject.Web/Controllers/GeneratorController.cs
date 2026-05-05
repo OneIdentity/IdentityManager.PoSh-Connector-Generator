@@ -225,7 +225,7 @@ public class GeneratorController : Controller
 		SaveMetadata(meta);
 
 		string json = JsonSerializer.Serialize(meta, JsonOptions);
-		string fileName = (meta.Namespace?.Trim() ?? "metadata") + ".json";
+		string fileName = (meta.Namespace?.Trim() ?? "metadata") + "Metadata.json";
 		return File(Encoding.UTF8.GetBytes(json), "application/json", fileName);
 	}
 
@@ -275,7 +275,7 @@ public class GeneratorController : Controller
 			using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
 			{
 				string metaJson = JsonSerializer.Serialize(meta, JsonOptions);
-				AddZipEntry(archive, $"{ns}.json", metaJson);
+				AddZipEntry(archive, $"{ns}Metadata.json", metaJson);
 
 				var defPS = new PowerShellConnectorGeneratorPS(meta).GetConnectorDefinition();
 				string xmlPS = SerializeXml(defPS);
@@ -302,7 +302,7 @@ public class GeneratorController : Controller
 	}
 
 	[HttpPost]
-	public IActionResult GenerateNet(string @namespace, string className)
+	public IActionResult GenerateNet(string @namespace, string className, bool generateSolution = false)
 	{
 		var meta = GetMetadata();
 		meta.Namespace = @namespace;
@@ -317,28 +317,153 @@ public class GeneratorController : Controller
 
 		string ns = meta.Namespace.Trim();
 
-		using var memoryStream = new MemoryStream();
-		using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
+		string tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+		Directory.CreateDirectory(tempFolder);
+
+		try
 		{
-			string metaJson = JsonSerializer.Serialize(meta, JsonOptions);
-			AddZipEntry(archive, $"{ns}.json", metaJson);
-
 			string netClass = new DotNETClassGenerator(meta).GenerateDotNetClass();
-			AddZipEntry(archive, $"{ns}.cs", netClass);
-
 			string netClassImpl = new DotNETClassImplementGenerator(meta).GenerateDotNetClass();
-			AddZipEntry(archive, $"{ns}Implement.cs", netClassImpl);
-
 			string netTestClass = new DotNETTestClassGenerator(meta).GenerateDotNetClass();
-			AddZipEntry(archive, $"{ns}_TEST.cs", netTestClass);
-
 			var defNet = new PowerShellConnectorGeneratorNet(meta).GetConnectorDefinition();
 			string xmlNet = SerializeXml(defNet);
-			AddZipEntry(archive, $"{ns}_NET.xml", xmlNet);
-		}
+			string metaJson = JsonSerializer.Serialize(meta, JsonOptions);
 
-		memoryStream.Position = 0;
-		return File(memoryStream.ToArray(), "application/zip", $"{ns}_NET_Generated.zip");
+			// Generate test data JSON files (same mechanism as PowerShell generator)
+			JsonFilesGenerator.PopulateJSONFile(meta.SyncClasses, tempFolder);
+
+			using var memoryStream = new MemoryStream();
+			using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
+			{
+				if (generateSolution)
+				{
+					string libProject = $"{ns}";
+					string testProject = $"{ns}.Test";
+					string slnFolder = $"{ns}_Solution";
+
+					// Solution file
+					string slnContent = GenerateSolutionFile(ns, libProject, testProject);
+					AddZipEntry(archive, $"{slnFolder}/{ns}.sln", slnContent);
+
+					// Library project
+					string libCsproj = GenerateLibraryCsproj(ns);
+					AddZipEntry(archive, $"{slnFolder}/{libProject}/{libProject}.csproj", libCsproj);
+					AddZipEntry(archive, $"{slnFolder}/{libProject}/{ns}.cs", netClass);
+					AddZipEntry(archive, $"{slnFolder}/{libProject}/{ns}Implement.cs", netClassImpl);
+
+					// Test (console) project
+					string testCsproj = GenerateConsoleCsproj(ns, libProject);
+					AddZipEntry(archive, $"{slnFolder}/{testProject}/{testProject}.csproj", testCsproj);
+					AddZipEntry(archive, $"{slnFolder}/{testProject}/{ns}_TEST.cs", netTestClass);
+
+					// Additional files
+					AddZipEntry(archive, $"{slnFolder}/{ns}Metadata.json", metaJson);
+					AddZipEntry(archive, $"{slnFolder}/{libProject}/{ns}_NET.xml", xmlNet);
+
+					// Add test data JSON files to solution folder
+					foreach (var jsonFile in Directory.GetFiles(tempFolder, "*.json"))
+					{
+						string content = System.IO.File.ReadAllText(jsonFile);
+						AddZipEntry(archive, $"{slnFolder}/{Path.GetFileName(jsonFile)}", content);
+					}
+				}
+				else
+				{
+					AddZipEntry(archive, $"{ns}Metadata.json", metaJson);
+					AddZipEntry(archive, $"{ns}.cs", netClass);
+					AddZipEntry(archive, $"{ns}Implement.cs", netClassImpl);
+					AddZipEntry(archive, $"{ns}_TEST.cs", netTestClass);
+					AddZipEntry(archive, $"{ns}_NET.xml", xmlNet);
+
+					// Add test data JSON files
+					foreach (var jsonFile in Directory.GetFiles(tempFolder, "*.json"))
+					{
+						string content = System.IO.File.ReadAllText(jsonFile);
+						AddZipEntry(archive, Path.GetFileName(jsonFile), content);
+					}
+				}
+			}
+
+			memoryStream.Position = 0;
+			string zipName = generateSolution ? $"{ns}_NET_Solution.zip" : $"{ns}_NET_Generated.zip";
+			return File(memoryStream.ToArray(), "application/zip", zipName);
+		}
+		finally
+		{
+			Directory.Delete(tempFolder, recursive: true);
+		}
+	}
+
+	private static string GenerateSolutionFile(string ns, string libProject, string testProject)
+	{
+		string libGuid = Guid.NewGuid().ToString("B").ToUpper();
+		string testGuid = Guid.NewGuid().ToString("B").ToUpper();
+		string slnGuid = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}";
+
+		return $"""
+
+			Microsoft Visual Studio Solution File, Format Version 12.00
+			# Visual Studio Version 17
+			VisualStudioVersion = 17.0.31903.59
+			MinimumVisualStudioVersion = 10.0.40219.1
+			Project("{slnGuid}") = "{libProject}", "{libProject}\{libProject}.csproj", "{libGuid}"
+			EndProject
+			Project("{slnGuid}") = "{testProject}", "{testProject}\{testProject}.csproj", "{testGuid}"
+			EndProject
+			Global
+				GlobalSection(SolutionConfigurationPlatforms) = preSolution
+					Debug|Any CPU = Debug|Any CPU
+					Release|Any CPU = Release|Any CPU
+				EndGlobalSection
+				GlobalSection(ProjectConfigurationPlatforms) = postSolution
+					{libGuid}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+					{libGuid}.Debug|Any CPU.Build.0 = Debug|Any CPU
+					{libGuid}.Release|Any CPU.ActiveCfg = Release|Any CPU
+					{libGuid}.Release|Any CPU.Build.0 = Release|Any CPU
+					{testGuid}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+					{testGuid}.Debug|Any CPU.Build.0 = Debug|Any CPU
+					{testGuid}.Release|Any CPU.ActiveCfg = Release|Any CPU
+					{testGuid}.Release|Any CPU.Build.0 = Release|Any CPU
+				EndGlobalSection
+			EndGlobal
+			""";
+	}
+
+	private static string GenerateLibraryCsproj(string ns)
+	{
+		return $"""
+			<Project Sdk="Microsoft.NET.Sdk">
+
+			  <PropertyGroup>
+				<TargetFramework>net10.0</TargetFramework>
+				<RootNamespace>{ns}</RootNamespace>
+				<Nullable>enable</Nullable>
+				<ImplicitUsings>enable</ImplicitUsings>
+			  </PropertyGroup>
+
+			</Project>
+			""";
+	}
+
+	private static string GenerateConsoleCsproj(string ns, string libProject)
+	{
+		return $"""
+			<Project Sdk="Microsoft.NET.Sdk">
+
+			  <PropertyGroup>
+				<OutputType>Exe</OutputType>
+				<TargetFramework>net10.0</TargetFramework>
+				<RootNamespace>{ns}.Test</RootNamespace>
+				<Nullable>enable</Nullable>
+				<ImplicitUsings>enable</ImplicitUsings>
+			  </PropertyGroup>
+
+			  <ItemGroup>
+				<ProjectReference Include="..\{libProject}\{libProject}.csproj" />
+			  </ItemGroup>
+
+			</Project>
+			""";
 	}
 
 	private static void AddZipEntry(ZipArchive archive, string fileName, string content)

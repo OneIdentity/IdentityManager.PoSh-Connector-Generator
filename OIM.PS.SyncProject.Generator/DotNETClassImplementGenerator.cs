@@ -11,7 +11,6 @@ namespace OIM.PS.SyncProject.Generator
     {
         private string _nameSpace;
         private string _classNameImplement;        
-        private static Random _ran = new Random();
         private PSSyncMetadata _meta = new PSSyncMetadata();
 
         public DotNETClassImplementGenerator(PSSyncMetadata metadata)                                        
@@ -29,8 +28,11 @@ namespace OIM.PS.SyncProject.Generator
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Collections;");
             sb.AppendLine("using System.Collections.Generic;");
+            sb.AppendLine("using System.IO;");
             sb.AppendLine("using System.Linq;");
             sb.AppendLine("using System.Text;");
+            sb.AppendLine("using System.Text.Json;");
+            sb.AppendLine("using System.Text.Json.Serialization;");
             sb.AppendLine("using System.Threading.Tasks;");
             sb.AppendLine("");
             sb.AppendLine($"namespace {_nameSpace}");
@@ -48,11 +50,17 @@ namespace OIM.PS.SyncProject.Generator
             }
 
             sb.AppendLine("");
-            sb.AppendLine("        //TEST Values");
+            sb.AppendLine("        //JSON file paths");
             foreach (var item in _meta.SyncClasses) 
             {
-                sb.AppendLine($"        private List<{item.ClassName}> _{item.ClassName.ToLower()}s = null;");
+                sb.AppendLine($"        private string _{item.ClassName.ToLower()}FilePath = null;");
             }
+            sb.AppendLine("");
+            sb.AppendLine("        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions");
+            sb.AppendLine("        {");
+            sb.AppendLine("            WriteIndented = true,");
+            sb.AppendLine("            PropertyNameCaseInsensitive = true");
+            sb.AppendLine("        };");
 
             sb.AppendLine("");
             sb.AppendLine("");
@@ -74,9 +82,10 @@ namespace OIM.PS.SyncProject.Generator
                 sb.AppendLine($"            _{item.ParamName.ToLower()} = {item.ParamName};");
             }
             sb.AppendLine("");
+            sb.AppendLine("            // Set JSON file paths relative to executable location");
             foreach (var item in _meta.SyncClasses) 
             {
-                sb.AppendLine($"            Populate{item.ClassName}s();");
+                sb.AppendLine($"            _{item.ClassName.ToLower()}FilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, \"{item.ClassName.ToLower()}.json\");");
             }
 
             sb.AppendLine("        }");
@@ -88,18 +97,7 @@ namespace OIM.PS.SyncProject.Generator
             sb.AppendLine("        /// <summary>");
             sb.AppendLine("        public void Disconnect()");
             sb.AppendLine("        {");
-            sb.AppendLine("");
-
-            foreach (var item in _meta.SyncClasses) 
-            {
-                sb.AppendLine($"            if(_{item.ClassName.ToLower()}s != null)");
-                sb.AppendLine("            {");
-                sb.AppendLine($"                _{item.ClassName.ToLower()}s.Clear();");
-                sb.AppendLine($"                _{item.ClassName.ToLower()}s = null;");
-                sb.AppendLine("            }");
-                sb.AppendLine("");
-            }
-
+            sb.AppendLine("            // Nothing to clean up when using file-based storage");
             sb.AppendLine("        }");
             sb.AppendLine("");
 
@@ -198,7 +196,6 @@ namespace OIM.PS.SyncProject.Generator
             StringBuilder sbPrim = new StringBuilder();
             StringBuilder sbPrim2 = new StringBuilder();
             string lclClass = $"ob{synClass.ClassName.ToLower()}";
-            //string lclId = "";
             string strPrimParams = "";
             string strPrimParamsInd = "";
 
@@ -206,7 +203,7 @@ namespace OIM.PS.SyncProject.Generator
 
             List<GenClassProp> primProps = synClass.Properties.Where(q => q.IsPrimaryKey).ToList();
 
-            
+
             foreach (var item in primProps)
             {
                 sbPrim.Append($"{item.DataTypeClass} {item.PropertyName},");
@@ -215,66 +212,96 @@ namespace OIM.PS.SyncProject.Generator
 
             strPrimParams = sbPrim.ToString().TrimEnd().TrimEnd(',');
             strPrimParamsInd = sbPrim2.ToString().TrimEnd().TrimEnd(',');
-            
 
+
+            // ReadAll helper
             sb.AppendLine("        /// <summary>");
-            sb.AppendLine("        /// Demo only!");
-            sb.AppendLine("        /// Put real implementation here");
+            sb.AppendLine("        /// Reads all records from JSON file.");
             sb.AppendLine("        /// <summary>");
-            sb.AppendLine($"        public List<{synClass.ClassName}> {synClass.ClassName}GetAll()");
+            sb.AppendLine($"        private List<{synClass.ClassName}> ReadAll{synClass.ClassName}s()");
             sb.AppendLine("        {");
-            sb.AppendLine("");
-            sb.AppendLine($"            return _{synClass.ClassName.ToLower()}s;");
-            sb.AppendLine("");
+            sb.AppendLine($"            if (File.Exists(_{synClass.ClassName.ToLower()}FilePath))");
+            sb.AppendLine("            {");
+            sb.AppendLine($"                string json = File.ReadAllText(_{synClass.ClassName.ToLower()}FilePath);");
+            sb.AppendLine($"                return JsonSerializer.Deserialize<List<{synClass.ClassName}>>(json, _jsonOptions) ?? new List<{synClass.ClassName}>();");
+            sb.AppendLine("            }");
+            sb.AppendLine($"            return new List<{synClass.ClassName}>();");
             sb.AppendLine("        }");
             sb.AppendLine("");
 
+            // SaveAll helper
             sb.AppendLine("        /// <summary>");
-            sb.AppendLine("        /// Demo only!");
-            sb.AppendLine("        /// Put real implementation here");
+            sb.AppendLine("        /// Saves all records to JSON file.");
+            sb.AppendLine("        /// <summary>");
+            sb.AppendLine($"        private void SaveAll{synClass.ClassName}s(List<{synClass.ClassName}> items)");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            string json = JsonSerializer.Serialize(items, _jsonOptions);");
+            sb.AppendLine($"            File.WriteAllText(_{synClass.ClassName.ToLower()}FilePath, json);");
+            sb.AppendLine("        }");
+            sb.AppendLine("");
+
+            // GetAll
+            sb.AppendLine("        /// <summary>");
+            sb.AppendLine("        /// Demo only! Put real implementation here.");
+            sb.AppendLine("        /// Reads all records from JSON file on every call.");
+            sb.AppendLine("        /// <summary>");
+            sb.AppendLine($"        public List<{synClass.ClassName}> {synClass.ClassName}GetAll()");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            return ReadAll{synClass.ClassName}s();");
+            sb.AppendLine("        }");
+            sb.AppendLine("");
+
+            // Get by ID
+            sb.AppendLine("        /// <summary>");
+            sb.AppendLine("        /// Demo only! Put real implementation here.");
             sb.AppendLine("        /// <summary>");
 
-            //Work with multiple Primary Keys
+            // Build the LINQ Where clause for finding by primary key(s)
+            tmpSb.Clear();
+            foreach (var prop in primProps)
+            {
+                if (prop.DataType == DataTypes.String)
+                {
+                    tmpSb.Append($"q.{prop.PropertyName}.Equals({prop.PropertyName}, StringComparison.OrdinalIgnoreCase) && ");
+                }
+                else if (prop.DataType == DataTypes.Int)
+                {
+                    tmpSb.Append($"q.{prop.PropertyName} == {prop.PropertyName} && ");
+                }
+            }
+            var whereClause = tmpSb.ToString().TrimEnd().TrimEnd('&').TrimEnd('&').TrimEnd();
 
             if (primProps.Count == 1)
             {
                 sb.AppendLine($"        public {synClass.ClassName} {synClass.ClassName}Get({primProps[0].DataTypeClass} {strPrimParamsInd})");
-                sb.AppendLine("        {");
-                sb.AppendLine("");
-                sb.AppendLine($"            return Get{synClass.ClassName}ById({primProps[0].PropertyName});");
-                sb.AppendLine("");
-                sb.AppendLine("        }");
             }
             else
-            {                
+            {
                 sb.AppendLine($"        public {synClass.ClassName} {synClass.ClassName}Get({strPrimParams})");
-                sb.AppendLine("        {");
-                sb.AppendLine("");
-                sb.AppendLine($"            return Get{synClass.ClassName}ById({strPrimParamsInd});");
-                sb.AppendLine("");
-                sb.AppendLine("        }");
             }
-            
+            sb.AppendLine("        {");
+            sb.AppendLine($"            var items = ReadAll{synClass.ClassName}s();");
+            sb.AppendLine($"            return items.Where(q => {whereClause}).FirstOrDefault();");
+            sb.AppendLine("        }");
             sb.AppendLine("");
 
+            // Create
             sb.AppendLine("        /// <summary>");
-            sb.AppendLine("        /// Demo only!");
-            sb.AppendLine("        /// Put real implementation here");
+            sb.AppendLine("        /// Demo only! Put real implementation here.");
+            sb.AppendLine("        /// Reads all from file, adds new record, saves back to file.");
             sb.AppendLine("        /// <summary>");
             sb.AppendLine($"        public {synClass.ClassName} {synClass.ClassName}Create({synClass.ClassName} {lclClass})");
             sb.AppendLine("        {");
             sb.AppendLine("");
 
-
             if (primProps.Count == 1)
             {
-               
                 if (primProps[0].DataType == DataTypes.Int)
                 {
                     sb.AppendLine($"            if ({lclClass}.{strPrimParamsInd} == 0)");
                     sb.AppendLine("            {");
                     var val = (new Random()).Next();
-                    sb.AppendLine($"                {lclClass}.{strPrimParamsInd} = {val};"); 
+                    sb.AppendLine($"                {lclClass}.{strPrimParamsInd} = {val};");
                 }
                 else if (primProps[0].DataType == DataTypes.String)
                 {
@@ -286,15 +313,10 @@ namespace OIM.PS.SyncProject.Generator
                 {
                     throw new Exception($"Data Type {primProps[0].DataType} is not valid for primary key");
                 }
-                
-                
                 sb.AppendLine("            }");
             }
             else
             {
-                sbPrim.Clear();
-                sbPrim2.Clear();
-
                 foreach (var item in primProps)
                 {
                     if (item.DataType == DataTypes.Int)
@@ -314,68 +336,40 @@ namespace OIM.PS.SyncProject.Generator
                     {
                         throw new Exception($"Data Type {primProps[0].DataType} is not valid for primary key");
                     }
-                    
                     sb.AppendLine("            }");
                     sb.AppendLine("");
                 }
             }
 
             sb.AppendLine("");
-            sb.AppendLine($"            _{synClass.ClassName.ToLower()}s.Add({lclClass});");
+            sb.AppendLine($"            var items = ReadAll{synClass.ClassName}s();");
+            sb.AppendLine($"            items.Add({lclClass});");
+            sb.AppendLine($"            SaveAll{synClass.ClassName}s(items);");
             sb.AppendLine($"            return {lclClass};");
             sb.AppendLine("        }");
             sb.AppendLine("");
 
+            // Update
             sb.AppendLine("        /// <summary>");
-            sb.AppendLine("        /// Demo only!");
-            sb.AppendLine("        /// Put real implementation here");
-            sb.AppendLine("        /// Hashtable holds a list of modified fields and their new values");
+            sb.AppendLine("        /// Demo only! Put real implementation here.");
+            sb.AppendLine("        /// Reads all from file, updates the matching record, saves back to file.");
+            sb.AppendLine("        /// Hashtable holds a list of modified fields and their new values.");
             sb.AppendLine("        /// <summary>");
             sb.AppendLine($"        public {synClass.ClassName} {synClass.ClassName}Update({strPrimParams}, System.Collections.Hashtable updates)");
             sb.AppendLine("        {");
-            sb.AppendLine($"            var {lclClass} = Get{synClass.ClassName}ById({strPrimParamsInd});");
+            sb.AppendLine($"            var items = ReadAll{synClass.ClassName}s();");
+            sb.AppendLine($"            var {lclClass} = items.Where(q => {whereClause}).FirstOrDefault();");
             sb.AppendLine("");
             sb.AppendLine($"            if ({lclClass} == null)");
             sb.AppendLine("            {");
-            sb.AppendLine("                throw new Exception($\"Unable to find " + synClass + " by IDs \");");
+            sb.AppendLine("                throw new Exception($\"Unable to find " + synClass.ClassName + " by IDs \");");
             sb.AppendLine("            }");
             sb.AppendLine("");
-            sb.AppendLine($"            Update{synClass.ClassName}({lclClass}, updates);");
-            sb.AppendLine($"            return {lclClass};");
-            sb.AppendLine("        }");
-            sb.AppendLine("");
 
-            sb.AppendLine("        /// <summary>");
-            sb.AppendLine("        /// Demo only!");
-            sb.AppendLine("        /// Put real implementation here");
-            sb.AppendLine("        /// <summary>");
-            sb.AppendLine($"        public void {synClass.ClassName}Delete({strPrimParams})");
-            sb.AppendLine("        {");
-            sb.AppendLine("");
-            sb.AppendLine($"            var {lclClass} = Get{synClass.ClassName}ById({strPrimParamsInd});");
-            sb.AppendLine("");
-            sb.AppendLine($"            if ({lclClass} != null)");
-            sb.AppendLine("            {");
-            sb.AppendLine($"                _{synClass.ClassName.ToLower()}s.Remove({lclClass});");
-            sb.AppendLine("            }");
-            sb.AppendLine("");
-            sb.AppendLine("        }");
-            sb.AppendLine("");
-
-
-            sb.AppendLine("        //P.S. Local methods =========================");
-            sb.AppendLine("        /// <summary>");
-            sb.AppendLine("        /// Demo only!");
-            sb.AppendLine("        /// Put real implementation here");
-            sb.AppendLine("        /// Hashtable holds a list of modified fields and their new values");
-            sb.AppendLine("        /// <summary>");
-            sb.AppendLine($"        private void Update{synClass.ClassName}({synClass.ClassName} {lclClass}, System.Collections.Hashtable updates)");
-            sb.AppendLine("        {");
-
-            props = synClass.Properties; 
-
+            // Apply updates
+            props = synClass.Properties;
             int counter = 0;
-            foreach (var item in props) 
+            foreach (var item in props)
             {
                 if (item.IsAutoFill || item.IsPrimaryKey)
                 {
@@ -408,121 +402,37 @@ namespace OIM.PS.SyncProject.Generator
                 }
 
                 sb.AppendLine($"            if (updates.ContainsKey(\"{item.PropertyName}\")) {{ {part} }};");
-
                 counter++;
             }
 
-            if(counter == 0)
+            if (counter == 0)
             {
-                sb.AppendLine("            //There are no non-primary fields to update in this class.");                
+                sb.AppendLine("            //There are no non-primary fields to update in this class.");
             }
 
-
+            sb.AppendLine("");
+            sb.AppendLine($"            SaveAll{synClass.ClassName}s(items);");
+            sb.AppendLine($"            return {lclClass};");
             sb.AppendLine("        }");
             sb.AppendLine("");
 
+            // Delete
             sb.AppendLine("        /// <summary>");
-            sb.AppendLine("        /// Demo only!");
-            sb.AppendLine("        /// Put real implementation here");
+            sb.AppendLine("        /// Demo only! Put real implementation here.");
+            sb.AppendLine("        /// Reads all from file, removes the matching record, saves back to file.");
             sb.AppendLine("        /// <summary>");
-            sb.AppendLine($"        private {synClass.ClassName} Get{synClass.ClassName}ById({strPrimParams})");
+            sb.AppendLine($"        public void {synClass.ClassName}Delete({strPrimParams})");
             sb.AppendLine("        {");
+            sb.AppendLine($"            var items = ReadAll{synClass.ClassName}s();");
+            sb.AppendLine($"            var {lclClass} = items.Where(q => {whereClause}).FirstOrDefault();");
             sb.AppendLine("");
-
-            
-            tmpSb.Clear();
-            foreach (var prop in primProps)
-            {
-                if (prop.DataType == DataTypes.String)
-                {
-                    tmpSb.AppendLine($" q.{prop.PropertyName}.Equals({prop.PropertyName}, StringComparison.OrdinalIgnoreCase) && ");
-                }
-                else if(prop.DataType == DataTypes.Int)
-                {
-                    tmpSb.AppendLine($" q.{prop.PropertyName} == {prop.PropertyName} && ");
-                }
-            }
-            var tmpStr = tmpSb.ToString().TrimEnd().TrimEnd('&').TrimEnd('&');
-
-            sb.AppendLine($"            return _{synClass.ClassName.ToLower()}s.Where(q => {tmpStr}).FirstOrDefault();");
-
-
-            
-            sb.AppendLine("");
-            sb.AppendLine("        }");
-
-            //P.S. populate values
-            sb.AppendLine("        /// <summary>");
-            sb.AppendLine("        /// Demo only!");
-            sb.AppendLine("        /// <summary>");
-            sb.AppendLine($"        private void Populate{synClass.ClassName}s()");
-            sb.AppendLine("        {");
-            sb.AppendLine("");
-            sb.AppendLine($"           _{synClass.ClassName.ToLower()}s = new List<{synClass.ClassName}>()");
+            sb.AppendLine($"            if ({lclClass} != null)");
             sb.AppendLine("            {");
-
-            for (int i = 0; i < 5; i++)
-            {
-                sb.AppendLine($"                new {synClass.ClassName}()");
-                sb.AppendLine("                {");
-
-                tmpSb.Clear();
-                tmpSb.AppendLine("");
-
-                props = _meta.GetClassByName(synClass.ClassName).Properties;
-
-                foreach (var item in props) //_classes[className])                    
-                {
-                    if (item.IsPrimaryKey)
-                    {
-                        if (item.DataType == DataTypes.String)
-                        {
-                            tmpSb.AppendLine($"                    {item.PropertyName} = Guid.NewGuid().ToString(),");
-                        }
-                        else if (item.DataType == DataTypes.Int)
-                        {
-                            tmpSb.AppendLine($"                    {item.PropertyName} = {i},");
-                        }
-                    }
-                    else
-                    {
-
-                        if (item.DataType == DataTypes.String)
-                        {
-                            if (item.IsMultivalue)
-                            {
-                                tmpSb.AppendLine($"                    {item.PropertyName} = new List<string>{{\"Test{item.PropertyName + i.ToString()}\"}}.ToArray(),"); //  \"Test{item.PropertyName}{i.ToString()}\",");
-                            }
-                            else
-                            {
-                                tmpSb.AppendLine($"                    {item.PropertyName} = \"Test{item.PropertyName}{i.ToString()}\",");
-                            }
-                        }
-                        else if (item.DataType == DataTypes.Int)
-                        {
-                            tmpSb.AppendLine($"                    {item.PropertyName} = {i},");
-                        }
-                        else if (item.DataType == DataTypes.Bool)
-                        {
-                            tmpSb.AppendLine($"                    {item.PropertyName} = false,");
-                        }
-                        else if (item.DataType == DataTypes.DateTime)
-                        {
-                            tmpSb.AppendLine($"                    {item.PropertyName} = " +
-                             $"DateTime.Parse(\"{ DateTime.MinValue.Add(TimeSpan.FromTicks((long)(_ran.NextDouble() * DateTime.MaxValue.Ticks)))}\"),");
-                        }
-                    }
-                }
-                //P.S. Remove final ','
-                sb.AppendLine(tmpSb.ToString().TrimEnd().TrimEnd(','));
-                sb.AppendLine("");
-                sb.AppendLine("");
-                sb.AppendLine("                },");
-            }
-
-            sb.AppendLine("");
-            sb.AppendLine("            };");
+            sb.AppendLine($"                items.Remove({lclClass});");
+            sb.AppendLine($"                SaveAll{synClass.ClassName}s(items);");
+            sb.AppendLine("            }");
             sb.AppendLine("        }");
+            sb.AppendLine("");
 
             return sb.ToString();
         }

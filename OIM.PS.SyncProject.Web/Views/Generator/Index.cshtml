@@ -187,12 +187,17 @@
                 <form method="post" asp-action="GeneratePowerShell" class="d-inline">
                     <input type="hidden" name="namespace" value="@Model.Namespace" />
                     <input type="hidden" name="className" value="@Model.ClassName" />
-                    <button type="submit" class="btn btn-sm btn-oi-primary" @(hasClasses ? "" : "disabled")>Generate PowerShell (ZIP)</button>
+                    <button type="submit" class="btn btn-sm btn-oi-primary" id="btnGeneratePS" @(hasClasses ? "" : "disabled")>Generate PowerShell (ZIP)</button>
                 </form>
-                <form method="post" asp-action="GenerateNet" class="d-inline">
+                <form method="post" asp-action="GenerateNet" class="d-inline d-flex align-items-center gap-2">
                     <input type="hidden" name="namespace" value="@Model.Namespace" />
                     <input type="hidden" name="className" value="@Model.ClassName" />
-                    <button type="submit" class="btn btn-sm btn-oi-primary" @(hasClasses ? "" : "disabled")>Generate .NET (ZIP)</button>
+                    <button type="submit" class="btn btn-sm btn-oi-primary" id="btnGenerateNet" @(hasClasses ? "" : "disabled")>Generate .NET (ZIP)</button>
+                    <div class="form-check mb-0">
+                        <input type="checkbox" name="generateSolution" value="true" class="form-check-input" id="chkGenSolution"
+                               onchange="toggleGenerateButtons()" />
+                        <label class="form-check-label small" for="chkGenSolution">Generate Visual Studio Solution</label>
+                    </div>
                 </form>
             </div>
         </div>
@@ -381,6 +386,36 @@
     </div>
 </div>
 
+<!-- ============ MODAL: Many-to-Many Help ============ -->
+<div class="modal fade" id="m2mHelpModal" tabindex="-1" aria-labelledby="m2mHelpLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="m2mHelpLabel" style="color: var(--oi-primary);">Many-to-Many Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    For Many-To-Many object, if it contains only foreign keys
+                    (No unique primary key, e.g. UserID and GroupID):
+                </p>
+                <ul>
+                    <li>Create a virtual primary key (check <strong>'Combined (virtual) primary key'</strong>)
+                        which will combine foreign keys in a vertical bar '|' separated string.</li>
+                    <li>Mark each foreign key as <strong>'Field to include in combined primary key'</strong>.</li>
+                    <li>If unique primary key exists in target system record - just check <strong>'IsPrimaryKey'</strong> checkbox.</li>
+                </ul>
+                <div class="text-center mt-3">
+                    <img src="~/images/Many-to-Many.png" alt="Many-to-Many diagram" class="img-fluid border rounded" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-oi-outline" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
 <script>
     const dataTypes = @Html.Raw(JsonSerializer.Serialize(Enum.GetNames<DataTypes>()));
@@ -442,14 +477,20 @@
     }
 
     function showM2MHelp() {
-        alert(
-            "For Many-To-Many object, if it contains only foreign keys\n" +
-            "    (No unique primary key, e.g. UserID and GroupID):\n" +
-            "Create a virtual primary key (check 'Combined (virtual) primary key')\n" +
-            "    which will combine foreign keys in a vertical bar '|' separated string.\n" +
-            "Mark each foreign key as 'Field to include in combined primary key'.\n" +
-            "If unique primary key exists in target system record - just check 'IsPrimaryKey' checkbox."
-        );
+        new bootstrap.Modal(document.getElementById('m2mHelpModal')).show();
+    }
+
+    function toggleGenerateButtons() {
+        const checked = document.getElementById('chkGenSolution').checked;
+        const btnPS = document.getElementById('btnGeneratePS');
+        if (checked) {
+            btnPS.setAttribute('disabled', '');
+        } else {
+            @if (hasClasses)
+            {
+                <text>btnPS.removeAttribute('disabled');</text>
+            }
+        }
     }
 
     function openEditClassModal(index) {

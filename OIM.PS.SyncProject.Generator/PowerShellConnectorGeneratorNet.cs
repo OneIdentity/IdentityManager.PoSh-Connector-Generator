@@ -601,7 +601,7 @@ namespace OIM.PS.SyncProject.Generator
             sb.AppendLine("           param( ");
             
             SyncClass cls = _meta.GetClassByName(className);
-            List<GenClassProp> props = cls.Properties.Where(q => q.IsPrimaryKey).ToList();
+            List<GenClassProp> props = cls.Properties.Where(q => q.IsPrimaryKey || q.IsCombinedPrimaryKey).ToList();
             if (props == null || props.Count == 0)
             {
                 throw new Exception($"There must be one parameter, marked as 'Primary Key' in class {className}");
@@ -612,7 +612,7 @@ namespace OIM.PS.SyncProject.Generator
             {
                 sb.AppendLine("              [parameter(Mandatory =$true, ValueFromPipelineByPropertyName =$true)] ");
 
-                if (prop.IsMandatory || prop.IsPrimaryKey)
+                if (prop.IsMandatory || prop.IsPrimaryKey || prop.IsCombinedPrimaryKey)
                 {
                     sb.AppendLine("              [ValidateNotNullOrEmpty()] ");
                 }
@@ -762,7 +762,7 @@ namespace OIM.PS.SyncProject.Generator
             sb.AppendLine("           param( ");
             
             SyncClass cls = _meta.GetClassByName(className);
-            List<GenClassProp> props = cls.Properties.Where(q => q.IsPrimaryKey).ToList();
+            List<GenClassProp> props = cls.Properties.Where(q => q.IsPrimaryKey || q.IsCombinedPrimaryKey).ToList();
             if (props == null || props.Count == 0)
             {
                 throw new Exception($"There must be one parameter, marked as 'Primary Key' in class {className}");
@@ -772,7 +772,7 @@ namespace OIM.PS.SyncProject.Generator
             {
                 sb.AppendLine("              [parameter(Mandatory =$true, ValueFromPipelineByPropertyName =$true)] ");
 
-                if (prop.IsMandatory || prop.IsPrimaryKey)
+                if (prop.IsMandatory || prop.IsPrimaryKey || prop.IsCombinedPrimaryKey)
                 {
                     sb.AppendLine("              [ValidateNotNullOrEmpty()] ");
                 }

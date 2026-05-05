@@ -16,6 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		files\2024-10-03_11-21-05.png = files\2024-10-03_11-21-05.png
 		files\Header.png = files\Header.png
 		files\Logo.png = files\Logo.png
+		files\Many-to-Many.png = files\Many-to-Many.png
 	EndProjectSection
 EndProject
 Global

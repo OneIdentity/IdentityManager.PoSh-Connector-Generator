@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace OIM.PS.SyncProject.Generator
 {
-	internal class JsonFilesGenerator
+	public class JsonFilesGenerator
 	{
 		public static void PopulateJSONFile(List<SyncClass> synClasses, string filePath)
 		{
