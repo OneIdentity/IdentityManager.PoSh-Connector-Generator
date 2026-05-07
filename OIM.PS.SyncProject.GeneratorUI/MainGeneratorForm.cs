@@ -407,34 +407,36 @@ namespace OIM.PS.SyncProject.GeneratorUI
 			var typeProjectGenerator = DLL.GetType("OIM.PS.SyncProject.Generator.DotNetProjectCreator");
 			var typePowerShellXMLNet = DLL.GetType("OIM.PS.SyncProject.Generator.PowerShellConnectorGeneratorNet");
 
-			//--------------------------------------------------------------            
-			var ps = Activator.CreateInstance(typePowerShellXMLNet, new object[] { _meta });
-			var method = typePowerShellXMLNet.GetMethod("GetConnectorDefinition");
-			var def = (PowershellConnectorDefinition)method.Invoke(ps, null);
-			string syncXML = SerializeXML(def);
-			WriteStringToFile(xmlFileNet, syncXML);
-			//--------------------------------------------------------------
-			var cg = Activator.CreateInstance(typeClassGenerator, new object[] { _meta });
-			method = typeClassGenerator.GetMethod("GenerateDotNetClass");
-			string netClass = method.Invoke(cg, null).ToString();
-			WriteStringToFile(classFile, netClass);
-			//--------------------------------------------------------------
-			var cig = Activator.CreateInstance(typeClassImplGenerator, new object[] { _meta, });
-			method = typeClassImplGenerator.GetMethod("GenerateDotNetClass");
-			string netClassImplem = method.Invoke(cig, null).ToString();
-			WriteStringToFile(classImplementFile, netClassImplem);
-			//--------------------------------------------------------------
-			var tcg = Activator.CreateInstance(typeTestClasslGenerator, new object[] { _meta });
-			method = typeTestClasslGenerator.GetMethod("GenerateDotNetClass");
-			string netTestClass = method.Invoke(tcg, null).ToString();
-			WriteStringToFile(classTestFile, netTestClass);
-			//--------------------------------------------------------------
 			if (chkVisualStudio.Checked)
-			{
-				var pg = Activator.CreateInstance(typeProjectGenerator, new object[] { _meta, path });
-				method = typeProjectGenerator.GetMethod("BuildProject");
-				method.Invoke(pg, null);
-			}
+				{
+					var pg = Activator.CreateInstance(typeProjectGenerator, new object[] { _meta, path });
+					var method = typeProjectGenerator.GetMethod("BuildProject");
+					method.Invoke(pg, null);
+				}
+				else
+				{
+					//--------------------------------------------------------------
+					var ps = Activator.CreateInstance(typePowerShellXMLNet, new object[] { _meta });
+					var method = typePowerShellXMLNet.GetMethod("GetConnectorDefinition");
+					var def = (PowershellConnectorDefinition)method.Invoke(ps, null);
+					string syncXML = SerializeXML(def);
+					WriteStringToFile(xmlFileNet, syncXML);
+					//--------------------------------------------------------------
+					var cg = Activator.CreateInstance(typeClassGenerator, new object[] { _meta });
+					method = typeClassGenerator.GetMethod("GenerateDotNetClass");
+					string netClass = method.Invoke(cg, null).ToString();
+					WriteStringToFile(classFile, netClass);
+					//--------------------------------------------------------------
+					var cig = Activator.CreateInstance(typeClassImplGenerator, new object[] { _meta });
+					method = typeClassImplGenerator.GetMethod("GenerateDotNetClass");
+					string netClassImplem = method.Invoke(cig, null).ToString();
+					WriteStringToFile(classImplementFile, netClassImplem);
+					//--------------------------------------------------------------
+					var tcg = Activator.CreateInstance(typeTestClasslGenerator, new object[] { _meta });
+					method = typeTestClasslGenerator.GetMethod("GenerateDotNetClass");
+					string netTestClass = method.Invoke(tcg, null).ToString();
+					WriteStringToFile(classTestFile, netTestClass);
+				}
 			//////TODO - END Uncomment real code ======================================
 			//==============================================================
 

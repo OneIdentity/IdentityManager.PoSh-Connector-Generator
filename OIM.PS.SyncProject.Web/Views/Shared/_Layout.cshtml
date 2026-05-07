@@ -32,7 +32,7 @@
                             <a class="nav-link" asp-area="" asp-controller="Generator" asp-action="Index">Generator</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="~/docs/Help.pdf" target="_blank">Help</a>
+                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#helpModal">Help</a>
                         </li>
                     </ul>
                 </div>
@@ -54,7 +54,40 @@
         </div>
     </footer>
     }
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <!-- ============ MODAL: Help ============ -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel" style="color: var(--oi-primary);">Help &amp; Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                            <a href="/docs/Help.pdf" target="_blank" class="d-flex align-items-center gap-2 text-decoration-none">
+                                <span>&#128196;</span> <span>Documentation (PDF)</span>
+                            </a>
+                        </li>
+                        <li class="mb-3">
+                            <a href="https://github.com/OneIdentity/IdentityManager.PoSh-Connector-Generator" target="_blank" class="d-flex align-items-center gap-2 text-decoration-none">
+                                <span>&#128279;</span> <span>GitHub Repository</span>
+                            </a>
+                        </li>
+                        <li class="pt-2 border-top text-muted small">
+                            For comments or suggestions please contact<br />
+                            <strong>Paul Sherman</strong> &mdash; <a href="mailto:paul.sherman@oneidentity.demo">paul.sherman@oneidentity.demo</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-oi-outline" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

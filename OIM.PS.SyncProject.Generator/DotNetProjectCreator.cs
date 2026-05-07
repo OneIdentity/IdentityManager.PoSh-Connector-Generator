@@ -1,77 +1,147 @@
-﻿using Ionic.Zip;
-using OIM.PS.SyncProject.Common;
+﻿using OIM.PS.SyncProject.Common;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace OIM.PS.SyncProject.Generator
 {
     public class DotNetProjectCreator
     {
-        private string _outputPath = "";
-        private string _className = "OIMPSSyncConnectorClassFacade";
-        private string _nameSpace = "OIMPSSyncConnectorFacade";                
-        private string projectName = "PowerShell.NetConnector";               
-        private string myZip = @".\#.npr";
-        
+        private readonly PSSyncMetadata _metadata;
+        private readonly string _outputPath;
+        private readonly string _ns;
+
         public DotNetProjectCreator(PSSyncMetadata metadata, string outputPath)
         {
+            _metadata = metadata;
             _outputPath = outputPath;
-            _className = metadata.ClassName;
-            _nameSpace = metadata.Namespace;
+            _ns = metadata.Namespace;
         }
 
         public void BuildProject()
         {
-			//using (FileStream zipFile = File.Open(myZip, FileMode.Open))
-			//{
-			//    // Decrypt using password
-			//    using (var archive = new Archive(zipFile, new ArchiveLoadOptions() { DecryptionPassword = "#$nosecrets!!" }))
-			//    {
-			//        // Extract files to folder
-			//        archive.ExtractToDirectory(_outputPath);
-			//    }
-			//}
+            string libProject  = _ns;
+            string testProject = $"{_ns}.Test";
 
-			using (ZipFile zip = ZipFile.Read(myZip))
-			{
-				foreach (ZipEntry e in zip)
-				{
-					e.ExtractWithPassword(_outputPath, "#$nosecrets!!");
-				}
-			}
+            string libFolder  = Path.Combine(_outputPath, libProject);
+            string testFolder = Path.Combine(_outputPath, testProject);
 
+            Directory.CreateDirectory(libFolder);
+            Directory.CreateDirectory(testFolder);
 
+            // Solution file
+            WriteFile(_outputPath, $"{_ns}.sln", GenerateSolutionFile(libProject, testProject));
 
-			//Main project file.
-			string projText = File.ReadAllText($"{_outputPath}\\{projectName}\\{projectName}\\{projectName}.csproj");
-            projText = projText.Replace("<NamespacePlaceholder>", _nameSpace);
-            projText = projText.Replace("<AssembluPlaceholder>", _nameSpace);
-            projText = projText.Replace("<MainClass>", _nameSpace);
-            projText = projText.Replace("<ImplementClass>", $"{_nameSpace}Implement");
-            File.WriteAllText($"{_outputPath}\\{projectName}\\{projectName}\\{projectName}.csproj", projText);
+            // Library project
+            WriteFile(libFolder, $"{libProject}.csproj", GenerateLibraryCsproj());
 
-            //Test projectFile
-            string projTest = File.ReadAllText($"{_outputPath}\\{projectName}\\{projectName}_TEST\\{projectName}_TEST.csproj");
-            projTest = projTest.Replace("<TestProgram>", _nameSpace + "_TEST");
-            File.WriteAllText($"{_outputPath}\\{projectName}\\{projectName}_TEST\\{projectName}_TEST.csproj", projTest);
+            string netClass     = new DotNETClassGenerator(_metadata).GenerateDotNetClass();
+            string netClassImpl = new DotNETClassImplementGenerator(_metadata).GenerateDotNetClass();
+            WriteFile(libFolder, $"{_ns}.cs",          netClass);
+            WriteFile(libFolder, $"{_ns}Implement.cs", netClassImpl);
 
-            //Copy files.
-            string sourceFile = System.IO.Path.Combine(_outputPath, _nameSpace + ".cs");
-            string destFile = System.IO.Path.Combine($"{_outputPath}\\{projectName}\\{projectName}", _nameSpace + ".cs");
-            System.IO.File.Copy(sourceFile, destFile, true);
+            var def    = new PowerShellConnectorGeneratorNet(_metadata).GetConnectorDefinition();
+            string xml = SerializeXml(def);
+            WriteFile(libFolder, $"{_ns}_NET.xml", xml);
 
-            sourceFile = System.IO.Path.Combine(_outputPath, _nameSpace + "Implement.cs");
-            destFile = System.IO.Path.Combine($"{_outputPath}\\{projectName}\\{projectName}", _nameSpace + "Implement.cs");
-            System.IO.File.Copy(sourceFile, destFile, true);
+            // Test (console) project
+            WriteFile(testFolder, $"{testProject}.csproj", GenerateConsoleCsproj(libProject));
 
-            sourceFile = System.IO.Path.Combine(_outputPath, _nameSpace + "_TEST.cs");
-            destFile = System.IO.Path.Combine($"{_outputPath}\\{projectName}\\{projectName}_TEST", _nameSpace + "_TEST.cs");
-            System.IO.File.Copy(sourceFile, destFile, true);
+            string netTestClass = new DotNETTestClassGenerator(_metadata).GenerateDotNetClass();
+            WriteFile(testFolder, $"{_ns}_TEST.cs", netTestClass);
 
+            // Test data JSON files
+            JsonFilesGenerator.PopulateJSONFile(_metadata.SyncClasses, _outputPath);
+        }
+
+        private static void WriteFile(string folder, string fileName, string content)
+        {
+            File.WriteAllText(Path.Combine(folder, fileName), content, Encoding.UTF8);
+        }
+
+        private string GenerateSolutionFile(string libProject, string testProject)
+        {
+            string libGuid  = Guid.NewGuid().ToString("B").ToUpper();
+            string testGuid = Guid.NewGuid().ToString("B").ToUpper();
+            const string slnGuid = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}";
+
+            return
+$@"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project(""{slnGuid}"") = ""{testProject}"", ""{testProject}\{testProject}.csproj"", ""{testGuid}""
+EndProject
+Project(""{slnGuid}"") = ""{libProject}"", ""{libProject}\{libProject}.csproj"", ""{libGuid}""
+EndProject
+Global
+GlobalSection(SolutionConfigurationPlatforms) = preSolution
+Debug|Any CPU = Debug|Any CPU
+Release|Any CPU = Release|Any CPU
+EndGlobalSection
+GlobalSection(ProjectConfigurationPlatforms) = postSolution
+{libGuid}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+{libGuid}.Debug|Any CPU.Build.0 = Debug|Any CPU
+{libGuid}.Release|Any CPU.ActiveCfg = Release|Any CPU
+{libGuid}.Release|Any CPU.Build.0 = Release|Any CPU
+{testGuid}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+{testGuid}.Debug|Any CPU.Build.0 = Debug|Any CPU
+{testGuid}.Release|Any CPU.ActiveCfg = Release|Any CPU
+{testGuid}.Release|Any CPU.Build.0 = Release|Any CPU
+EndGlobalSection
+EndGlobal
+";
+        }
+
+        private string GenerateLibraryCsproj()
+        {
+            return
+$@"<Project Sdk=""Microsoft.NET.Sdk"">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>{_ns}</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>";
+        }
+
+        private string GenerateConsoleCsproj(string libProject)
+        {
+            return
+$@"<Project Sdk=""Microsoft.NET.Sdk"">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>{_ns}.Test</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <StartArguments>$(SolutionDir)</StartArguments>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include=""..\{libProject}\{libProject}.csproj"" />
+  </ItemGroup>
+
+</Project>";
+        }
+
+        private static string SerializeXml(PowershellConnectorDefinition def)
+        {
+            var serializer = new XmlSerializer(def.GetType());
+            var ns = new XmlSerializerNamespaces();
+            ns.Add("", "");
+
+            using var writer = new StringWriter();
+            serializer.Serialize(writer, def, ns);
+            return writer.ToString()
+                .Replace("&lt;", "<")
+                .Replace("&gt;", ">");
         }
     }
 }
