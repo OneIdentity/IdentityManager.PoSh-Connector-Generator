@@ -462,7 +462,7 @@
             <td><input type="checkbox" name="Properties[${i}].IsRevision" value="true" /></td>
             <td><input type="checkbox" name="Properties[${i}].IsMultivalue" value="true" /></td>
             <td><input type="number" name="Properties[${i}].OrderNumber" value="${i}" class="form-control form-control-sm" style="width:60px" /></td>
-            <td><button type="button" class="btn btn-sm btn-del py-0" onclick="this.closest('tr').remove(); reindexProperties(this.closest('tbody'))">&#x2715;</button></td>
+            <td><button type="button" class="btn btn-sm btn-del py-0" onclick="removePropertyRow(this)">&#x2715;</button></td>
             <td class="text-nowrap">
                 <button type="button" class="btn btn-sm btn-outline-secondary btn-move" onclick="movePropertyRow(this, -1)" title="Move Up">&#x25B2;</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary btn-move" onclick="movePropertyRow(this, 1)" title="Move Down">&#x25BC;</button>
@@ -522,7 +522,7 @@
                 <td><input type="checkbox" name="Properties[${i}].IsRevision" value="true" ${p.isRevision ? 'checked' : ''} /></td>
                 <td><input type="checkbox" name="Properties[${i}].IsMultivalue" value="true" ${p.isMultivalue ? 'checked' : ''} /></td>
                 <td><input type="number" name="Properties[${i}].OrderNumber" value="${p.orderNumber}" class="form-control form-control-sm" style="width:60px" /></td>
-                <td><button type="button" class="btn btn-sm btn-del py-0" onclick="this.closest('tr').remove(); reindexProperties(this.closest('tbody'))">&#x2715;</button></td>
+                <td><button type="button" class="btn btn-sm btn-del py-0" onclick="removePropertyRow(this)">&#x2715;</button></td>
                 <td class="text-nowrap">
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-move" onclick="movePropertyRow(this, -1)" title="Move Up">&#x25B2;</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-move" onclick="movePropertyRow(this, 1)" title="Move Down">&#x25BC;</button>
@@ -544,6 +544,12 @@
         } else if (direction === 1 && row.nextElementSibling) {
             tbody.insertBefore(row.nextElementSibling, row);
         }
+        reindexProperties(tbody);
+    }
+
+    function removePropertyRow(btn) {
+        const tbody = btn.closest('tbody');
+        btn.closest('tr').remove();
         reindexProperties(tbody);
     }
 
