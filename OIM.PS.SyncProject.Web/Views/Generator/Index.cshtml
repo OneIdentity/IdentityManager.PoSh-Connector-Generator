@@ -19,6 +19,13 @@
         flex: 1 1 auto;
     }
     .section-fixed { flex: 0 0 auto; }
+    #btnGeneratePS, #btnGenerateNet { border: 1px solid transparent; }
+    #btnGeneratePS:disabled, #btnGenerateNet:disabled {
+        background-color: #e9ecef;
+        color: var(--oi-text-secondary);
+        border-color: var(--oi-border-light);
+        opacity: 1;
+    }
     .btn-move { padding: 0 4px; font-size: 0.75rem; line-height: 1.2; color: var(--oi-primary); border-color: var(--oi-primary); }
     .btn-move:hover { background-color: var(--oi-primary); color: #fff; }
     .btn-del { border-color: var(--oi-primary); color: var(--oi-primary); }
@@ -31,6 +38,12 @@
     .table-oi-striped thead { background-color: var(--oi-bg); }
     /* Actions column right-align */
     .td-actions { text-align: right; white-space: nowrap; }
+    @@media (max-width: 767px) {
+        html, body { height: auto; overflow: auto; }
+        .generator-layout { height: auto; }
+        .generator-layout > .row { row-gap: 8px; }
+        .grid-scroll { max-height: 18rem; flex: 0 1 auto; }
+    }
 </style>
 
 <div class="generator-layout mt-2">
@@ -178,18 +191,25 @@
                     <input type="file" name="file" accept=".json" class="d-none" onchange="this.closest('form').submit();" />
                 </label>
             </form>
-            <div class="ms-auto d-flex gap-2">
+            <div class="ms-auto d-flex gap-2 flex-wrap align-items-center">
                 <form method="post" asp-action="SaveMetadata" class="d-inline">
                     <input type="hidden" name="namespace" value="@Model.Namespace" />
                     <input type="hidden" name="className" value="@Model.ClassName" />
                     <button type="submit" class="btn btn-sm btn-oi-outline">Save Metadata (JSON)</button>
+                </form>
+                <form method="post" asp-action="UpdateGenerationOptions" id="generationOptionsForm" class="d-inline">
+                    <div class="form-check mb-0">
+                        <input type="checkbox" name="generateTestCode" value="true" class="form-check-input" id="chkGenerateTestCode"
+                               checked="@Model.GenerateTestCode" disabled="@(!hasClasses)" onchange="saveGenerationOptions()" />
+                        <label class="form-check-label small" for="chkGenerateTestCode">Generate Test Code</label>
+                    </div>
                 </form>
                 <form method="post" asp-action="GeneratePowerShell" class="d-inline">
                     <input type="hidden" name="namespace" value="@Model.Namespace" />
                     <input type="hidden" name="className" value="@Model.ClassName" />
                     <button type="submit" class="btn btn-sm btn-oi-primary" id="btnGeneratePS" @(hasClasses ? "" : "disabled")>Generate PowerShell (ZIP)</button>
                 </form>
-                <form method="post" asp-action="GenerateNet" class="d-inline d-flex align-items-center gap-2">
+                <form method="post" asp-action="GenerateNet" class="d-inline d-flex flex-wrap align-items-center gap-2">
                     <input type="hidden" name="namespace" value="@Model.Namespace" />
                     <input type="hidden" name="className" value="@Model.ClassName" />
                     <button type="submit" class="btn btn-sm btn-oi-primary" id="btnGenerateNet" @(hasClasses ? "" : "disabled")>Generate .NET (ZIP)</button>
@@ -424,6 +444,31 @@
     let addPropIndex = 1;
     let editPropIndex = 0;
 
+    const testCodeCheckbox = document.getElementById('chkGenerateTestCode');
+    let savingGenerationOptions = false;
+    document.querySelectorAll('form[method="post"]').forEach(form => {
+        if (form.id === 'importForm') return;
+        form.addEventListener('formdata', event => {
+            event.formData.set('generateTestCode', String(testCodeCheckbox.checked));
+        });
+    });
+
+    async function saveGenerationOptions() {
+        const form = document.getElementById('generationOptionsForm');
+        savingGenerationOptions = true;
+        toggleGenerateButtons();
+        try {
+            const response = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+            if (!response.ok) throw new Error('Unable to save generation options.');
+        } catch {
+            testCodeCheckbox.checked = !testCodeCheckbox.checked;
+            alert('Unable to save generation options. Please try again.');
+        } finally {
+            savingGenerationOptions = false;
+            toggleGenerateButtons();
+        }
+    }
+
     // Sync classes data for edit modal
     const syncClassesData = @Html.Raw(JsonSerializer.Serialize(Model.SyncClasses.Select(sc => new {
         sc.ClassName,
@@ -484,15 +529,10 @@
 
     function toggleGenerateButtons() {
         const checked = document.getElementById('chkGenSolution').checked;
-        const btnPS = document.getElementById('btnGeneratePS');
-        if (checked) {
-            btnPS.setAttribute('disabled', '');
-        } else {
-            @if (hasClasses)
-            {
-                <text>btnPS.removeAttribute('disabled');</text>
-            }
-        }
+        const disabled = @JsonSerializer.Serialize(!hasClasses) || savingGenerationOptions;
+        document.getElementById('btnGeneratePS').disabled = disabled || checked;
+        document.getElementById('btnGenerateNet').disabled = disabled;
+        testCodeCheckbox.disabled = disabled;
     }
 
     function openEditClassModal(index) {

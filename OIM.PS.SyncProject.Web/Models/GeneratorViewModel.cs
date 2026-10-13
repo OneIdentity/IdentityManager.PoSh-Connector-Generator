@@ -2,10 +2,16 @@ using OIM.PS.SyncProject.Common;
 
 namespace OIM.PS.SyncProject.Web.Models;
 
+public class WebSyncMetadata : PSSyncMetadata
+{
+	public bool GenerateTestCode { get; set; }
+}
+
 public class GeneratorViewModel
 {
 	public string Namespace { get; set; } = "";
 	public string ClassName { get; set; } = "";
+	public bool GenerateTestCode { get; set; }
 	public List<Param> Parameters { get; set; } = new();
 	public List<SyncClass> SyncClasses { get; set; } = new();
 }
